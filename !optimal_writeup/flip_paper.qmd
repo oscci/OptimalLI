@@ -1,0 +1,55 @@
+---
+title: "Flip"
+bibliography: fliprefs.bib
+format: html
+editor: visual
+---
+
+<!--# files in: https://openneuro.org/datasets/ds004073/versions/1.0.0 -->
+
+<!--# this one has the plots of Johnstone et al -->
+
+## Introduction
+
+It has been established for many years that language processing depends on specialised areas in the left side of the brain in most people. Initial evidence came from observations of aphasia after brain lesions; already in the mid 19th century it was noted that aphasia was strongly associated with left-sided damage [@berker1986]. Neurosurgeons subsequently developed the Wada test [@wada1960] in which each hemisphere was successively anaesthetized to determine which was dominant for language. With the advent of modern brain imaging methods, it became possible to observe correlates of brain activation associated with different cognitive tasks, confirming the overwhelming population bias to left hemisphere processing for language generation.
+
+Despite the overwhelming converging evidence that language is lateralized in the brain, there are still many unanswered questions. For instance, we still do not know what, if any, advantages are associated with lateralization of language, or how it evolved in humans. But before we can address such fundamental questions, we need more empirical data on the chararacteristics of language lateralization. In particular, we need to know which aspects of language are lateralized, and how lateralization varies within and between individuals.
+
+Let us first consider what we know about language lateralization on a 'gold standard' task that reliably elicits left-sided activation in most people: silently generating words whose names begin with a given letter. Using fMRI we can quantify language lateralization by counting the number of voxels activated in the left hemisphere (L) and the number in the right (R), to give a laterality index (LI) that is conventionally computed as (L-R)/(L+R).
+
+```{r packages, echo=F}
+require(here)
+require(tidyverse)
+require(kableExtra)
+require(RNifti) #see https://rdrr.io/cran/RNifti/man/readNifti.html
+#require(rgl) #3D array plot
+require(reshape2)
+require(viridis) #for colours
+require(R.utils)
+
+```
+
+Figure 1 shows a density plot of LIs from the Word Generation task in a study of 58 left-handers and 33 right-handers by [@johnstone2021]. This shows a familiar pattern; most individuals are left-lateralized, regardless of handedness, but a minority are either right-lateralized or unlateralized. There are, however, remaining questions:
+
+First, the density plot shows a smooth continuous distribution, yet the distribution is highly non-normal, with peaks at either end. Is the underlying phenotype continuous, or is laterality really categorical, with the observed variation merely reflecting noise? If laterality is categorical, how many categories are there - are people either left- or right-lateralized, or are there more categories, as suggested by [@mazoyer2014]?
+
+A second related question is what are we to make of those individuals who are not clearly lateralised? Are they people for whom both hemispheres contribute equally to language processing, or is that an illusion created by noisy measurement? The lack of agreement over what is meant by "bilateral language" and how to define it in fMRI data was a striking result from a Delphi expert survey by [@vingerhoets2023].
+
+The answers to these questions will depend on an even more fundamental issue: choice of measurement. In a review of the literature, [@bradshaw2017] noted a wide variety of approaches have been used to calculate the LI. [@wilke2006] noted that the LI will vary according to the threshold used to identify activated voxels, the presence of outliers, and regional variability of activation. [@wilke2007] drew a distinction between methods that count the number of activated voxels (voxel count) vs those that focus on the strength of activation (voxel value), but observed that though the former method is thought to be more robust to statistical outliers, the two methods gave similar results. They also noted that an index comparing the whole of the left hemisphere to the whole of the right hemisphere will dilute effects that are apparent in more focused regional analysis. They provided a software toolbox that allowed researchers to employ bootstrapping methods to generate LI values at different levels of thresholding and with different parameters, and the resulting "threshold free" assessment of the LI is now widely used [@vingerhoets2023]. It has been shown to give impressive levels of test-retest reliability [@johnstone2020] in a word generation task: r = .92 (95%CI .88 to .95).
+
+```{r makehisto echo=FALSE}
+#data downloaded from OSF https://osf.io/mya2k
+johnstone.dat <- read_csv(here("flip_bruckert_writeup/Average_Hem_LI.csv"))
+johnstone.dat$Handed <- as.factor(johnstone.dat$Group)
+
+ggplot(johnstone.dat) + 
+  geom_density(aes(x=Fluency, colour=Handed, fill=Handed), alpha=0.5,bw=.2)+
+  xlab('right < ----------  Word Generation LI ---------- > left')+
+  geom_vline(xintercept = 0, linetype="dotted")
+
+
+```
+
+## Methods
+
+### Participants
