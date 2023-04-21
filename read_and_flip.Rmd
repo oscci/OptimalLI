@@ -1,0 +1,156 @@
+---
+title: "Read and flip from FEAT"
+output: html_notebook
+---
+
+<!--# files in: https://openneuro.org/datasets/ds004073/versions/1.0.0 -->
+
+
+
+FEAT is part of FSL (FMRIB's Software Library).
+Re FEAT see: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FEAT  
+In FEAT, the GLM method used on first-level (time-series) data is known as FILM (FMRIB's Improved Linear Model). FILM uses a robust and accurate nonparametric estimation of time series autocorrelation to prewhiten each voxel's time series; this gives improved estimation efficiency compared with methods that do not pre-whiten. 
+
+
+Files for each subject can be downloaded individually and then unzipped.  This gives a *lot* of information!
+Files with subscript .nii.gz will be unpacked when you double click and become a nifty file. This is readable using readNifti from RNifti package.
+
+N.B. The background information is in !Subject_list.docx. I have created csv file with these details.
+
+From FEAT:  
+_The Noise level % and Temporal smoothness together characterise the noise in the data, to be used only in the design efficiency estimation. The Noise level % is the standard deviation (over time) for a typical voxel, expressed as a percentage of the baseline signal level. The Temporal smoothness is the smoothness coefficient in a simple AR(1) autocorrelation model (much simpler than that actually used in the FILM timeseries analysis but good enough for the efficiency calculation here)._  
+I think it would be useful to have noise estimates from individual subjects.  
+
+
+```{r packages}
+require(here)
+require(tidyverse)
+require(kableExtra)
+require(RNifti) #see https://rdrr.io/cran/RNifti/man/readNifti.html
+require(rgl) #3D array plot
+require(reshape2)
+require(viridis) #for colours
+require(R.utils)
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.16")
+biocLite(c("GEOquery"))
+
+tryfile<-here(foldername,'varcope1.nii.gz')
+readNifti(R.utils::gzip(tryfile))
+
+thisdir<-'/Users/dorothybishop/Rprojects/FlipMethod/bruckert/024MAT2/wordgen120vols.feat'
+
+```
+
+in shell
+cd /Users/dorothybishop/Rprojects/FlipMethod/bruckert/024MAT2/wordgen120vols.feat/stats/
+gunzip -dk *.gz  (keeps original files)
+
+cd /Users/dorothybishop/Rprojects/FlipMethod/bruckert/025MAA1/wordgen120vols.feat/stats/
+gunzip -d *.gz  (decompresses, deletes original files)
+
+cd /Users/dorothybishop/Rprojects/FlipMethod/bruckert/033MAT1/wordgen120vols.feat/stats/
+
+```{r getfiles}
+sublist<-read.csv('!sublist.csv') #I've added cols for exploratory LIs
+
+allsubs<-sublist$ID
+#Specify file here
+```
+
+```{r getsub}
+myfolder<-'bruckert'
+mysub<-'024MAT2'
+#i<-which(sublist$ID==mysub)
+
+foldername<-here(myfolder,mysub,'wordgen120vols.feat') #all FEAT files for this subject
+#allfiles<-list.files(foldername) #for initial inspection of files
+
+cope1<-readNifti(here(foldername,'stats','cope1.nii'))
+temp<-readNifti(gunzip(here(foldername,'stats','tstat1.nii')))
+#cope1<-readNifti(here(foldername,thisfile[1]))
+copearray<-as.array(cope1) #read in array of values
+#dimension 1 is L-R, dimension 2 is Ant-Post, and dimension 3 is Sup,Inf.
+#So we can say that for dimension 1, values 1-45 are left and values 46-90 are R.
+#But need to reflect these to give mirror image flip
+#(though dim size is different for Bangor, max of 96 for first 2 dims)
+
+dimsize<-dim(copearray)[1]
+dim3<-dim(copearray)[3]
+copematR<-copearray[1:(dimsize/2),,]
+copematL<-copearray[seq(dimsize,(1+dimsize/2),-1),,]
+
+#now should be able to subtract to get difference in activation at each voxel on single hemisphere
+copematdiff<-copematL-copematR
+
+#Will try a version with zeroes in R hem, and difference scores in L hem
+
+  nucopediff<-array(0,dim=c(dimsize,dimsize,dim3))
+  nucopediff[1:(dimsize/2),,]<-copematdiff
+
+  cope.nii.diff<-asNifti(nucopediff) #can turn back into Nifti, though no header!
+  #view(cope.nii.diff)
+  #Ideally want to add header?
+  #Top L graph is P vs A on x axis, and S vs I on y axis
+  #Top R graph is S vs I on x axis and L vs R on y axis
+  #Bottom L graph is L vs R on x axis and A vs P on y axis
+  #NB this different from original unsubtracted, where L vs R is top/bottom on graph?
+  
+#r try3Dplot
+# M=melt(nucopediff)
+# M<-M[M$value!=0,] #remove zero values
+# hist(M$value)
+# #can see v steep peak in distribution - few values larger than abs 80; let's try censoring at plus/minus 80
+# w<-which(M$value>80)
+# M$value[w]<-80
+# w<-which(M$value<(-80))
+# M$value[w]<-(-80)
+# M$value <- 9+round(M$value/10)
+# 
+# points3d(M$Var1,M$Var2,M$Var3,color=viridis(17)[M$value])
+
+#Problem is that scaling seems different across subjects. Could normalise but that may make small differences look big in those with low activation? And would shift mean unless it was reinstated at zero!
+
+M1=melt(nucopediff)
+M1<-M1[M1$value!=0,] #remove zero values
+M1mean<-mean(M1$value)
+offset<-M1mean/sd(M1$value)
+M1$value<-offset+(M1$value-M1mean)/sd(M1$value)
+hist(M1$value)
+#now make integers corresponding to colours
+#First censor at plus/minus 5
+w<-which(M1$value<(-5))
+M1$value[w]<- -5
+w<-which(M1$value>(5))
+M1$value[w]<- 5
+M1$value<-M1$value+6 #lowest rounded value will be 1
+M1$value <- round(M1$value,0)
+
+points3d(M1$Var1,M1$Var2,M1$Var3,color=viridis(11)[M1$value])
+
+#single group t.test with every 1000 pts sampled
+mypts <- seq(1,nrow(M1),1000)
+t2<-t.test(M1$value[mypts])
+
+w<-which(sublist$ID==mysub)
+
+sublist$wholehem_meandiff[w]<-round(t2$estimate,2)
+sublist$wholehem_lo_CI[w]<-round(t2$conf.int[1],2)
+sublist$wholehem_hi_CI[w]<-round(t2$conf.int[2],2)
+sublist$wholehemLI[w]<-NA
+sublist$wholehemt[w]<-round(t2$statistic,2)
+sublist$wholehemDF[w]<-t2$parameter
+sublist$wholehemp[w]<-round(t2$p.value,3)
+
+  
+write.csv(sublist,'sublist.csv',row.names=F)
+  
+m<-readNifti(here,foldername,'mask.nii')
+
+```
+
+
+
+
