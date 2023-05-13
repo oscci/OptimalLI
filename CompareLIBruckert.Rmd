@@ -1,0 +1,272 @@
+---
+title: "CompareLIs"
+author: "Dorothy Bishop"
+date: "2023-05-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require(here)
+require(janitor) #clean up names from external files
+```
+
+## Data from fMRI
+
+3 tasks: Word Generation, Auditory Naming and Pyramids and Palm Trees.  
+(Also for ftcd on WG and PPT but not AN).
+For WG comparison is with rest (contrast 1).
+for AN it is with backward speech (contrast 5).   
+for PPT it is with line judgement (contrast 5).  
+
+We have data from LI toolbox analysis (already done by Zoe - which includes N voxels - though that seems odd as with bootstrap N voxels is constant? She told me she had hacked into script to get this - maybe this is N voxels at a specific threshold?). For now will read in just the regular LIs for the MCA mask.  
+Will eventually want to redo these I think to just check that settings are the same. I also need some indication of confidence interval for these. 
+
+We also now have data from my flip method, which includes t-values as well as means for L and R volumes. 
+
+And I need to read latest fTCD LIs using GAM method. May need to run these for PPT?
+
+So let's start by seeing what data we can read in from existing files. 
+Just remembered that I need to use tstat data, so I am going to rerun LI toolbox
+
+NB one missing file for AN and one for PPT. I am just editing the .csv files manually to deal with this for now
+ AN is missing subject 085, and PPT is missing subject 068
+
+
+```{r readdata}
+demog <- read_csv(here("Bruckert","_bruckert_summarydat.csv"))
+# we'll use this just for demographics, handedness etc
+
+LI_an5 <- read.csv(here("Bruckert","LIComparisons","Toolbox_audnam_t_MCA.csv"))
+LI_ppt5 <- read.csv(here("Bruckert","LIComparisons","Toolbox_PPT_t_MCA.csv"))      
+LI_wg <- read.csv(here("Bruckert","LIComparisons","Toolbox_WG_t_MCA.csv"))   
+
+LI_an5 <- clean_names(LI_an5)
+LI_ppt5 <- clean_names(LI_ppt5)
+LI_wg <- clean_names(LI_wg)
+
+
+flip_an5 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_audnam5_MCA.csv"))
+flip_ppt5 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_ppt5_MCA.csv"))
+flip_ppt1 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_ppt1_MCA.csv"))
+flip_wg <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_wg_MCA.csv"))
+
+#Now find the GAM values for doppler
+dop_wg <- read.csv(here("Bruckert","LIComparisons","DopplerGAM_WG.csv"))
+dop_ppt <- read.csv(here("Bruckert","LIComparisons","DopplerGAM_ppt.csv"))
+
+
+
+
+```
+
+
+I am going to build a new file with just what we need
+
+```{r buildfile}
+# start with demog file
+keepcols <- c("ID","group_cat", "group_lat","age_at_scan","sex","hand_self_report","hand_EHI")
+crosstask <- demog[,keepcols]
+crosstask$nonRH <- 1
+crosstask$handcolour <- 'red'
+crosstask$nonRH[crosstask$hand_self_report=="R"] <- 0
+crosstask$handcolour[crosstask$hand_self_report=="R"]  <-'blue'
+crosstask$pchcol <- crosstask$group_cat+15
+crosstask$pchcol <- as.factor(crosstask$pchcol)
+crosstask$subID <- substr(crosstask$ID,1,3)
+
+#would be sensible to make a function to add variables - less likely to make a typo
+#but for now...
+#now add doppler
+
+crosstask$GAMdopWG <-NA
+crosstask$GAMdopWGse <-NA
+crosstask$GAMdopPPT<-NA
+crosstask$GAMdopPPTse <-NA
+crosstask$boot_LI_WG <- NA
+crosstask$boot_LI_WGse <- NA
+crosstask$boot_LI_PPT5 <- NA
+crosstask$boot_LI_PPT5se <- NA
+crosstask$boot_LI_AN5 <- NA
+crosstask$boot_LI_AN5se <- NA
+crosstask$flip_WG <- NA
+crosstask$flip_WGse <- NA
+crosstask$flip_PPT5 <- NA
+crosstask$flip_PPT5se <- NA
+crosstask$flip_AN5 <- NA
+crosstask$flip_AN5se <- NA
+crosstask$flip_PPT1 <- NA
+crosstask$flip_PPT1se <- NA
+
+for (i in 1:nrow(crosstask)){
+  mysub <- crosstask$subID[i]
+  w<-which(substr(dop_wg$Filename,1,3)==mysub )
+  if(length(w)>0){
+    crosstask$GAMdopWG[i]<-dop_wg$C_LI.est[w]
+    crosstask$GAMdopWGse[i]<-dop_wg$C_LIest.se[w]
+  }
+    w2<-which(substr(dop_ppt$Filename,1,3)==mysub )
+  if(length(w2)>0){
+    crosstask$GAMdopPPT[i]<-dop_ppt$C_LI.est[w2]
+    crosstask$GAMdopPPTse[i]<-dop_ppt$C_LIest.se[w]
+  }
+}
+
+#now add LI from fmri for all 3 tasks from toolbox
+for (i in 1:nrow(crosstask)){
+  mysub <- crosstask$subID[i]
+  w<-which(substr(LI_wg$id,1,3)==mysub )
+  if(length(w)>0){
+    crosstask$boot_LI_WG[i]<-LI_wg$li_wm[w]
+    crosstask$boot_LI_WGse[i]<-LI_wg$li_sd[w]/sqrt(2000)
+  }
+    w2<-which(substr(LI_ppt5$id,1,3)==mysub )
+  if(length(w2)>0){
+    crosstask$boot_LI_PPT5[i]<-LI_ppt$li_wm[w2]
+    crosstask$boot_LI_PPT5se[i]<-LI_ppt5$li_sd[w2]/sqrt(2000)
+  }
+       w3<-which(substr(LI_an5$id,1,3)==mysub )
+  if(length(w3)>0){
+    crosstask$boot_LI_AN5[i]<-LI_an5$li_wm[w3]
+    crosstask$boot_LI_AN5se[i]<-LI_an5$li_sd[w3]/sqrt(2000)
+  }
+}
+
+#now add flip t values
+for (i in 1:nrow(crosstask)){
+  mysub <- crosstask$subID[i]
+  w<-which(grepl(mysub,flip_wg$file)==TRUE) #finds file ID in that long file string
+  if(length(w)>0){
+    crosstask$flip_WG[i]<-flip_wg$flip_t[w]
+    crosstask$flip_WGse[i]<-flip_wg$sdflipt[w]/sqrt(flip_wg$flipt_DF[w])
+  }
+  w1<-which(grepl(mysub,flip_ppt5$file)==TRUE) #finds file ID in that long file string
+  if(length(w1)>0){
+    crosstask$flip_PPT5[i]<-flip_ppt5$flip_t[w1]
+    crosstask$flip_PPT5se[i]<-flip_ppt5$sdflipt[w1]/sqrt(flip_ppt5$flipt_DF[w1])
+  }
+   w2<-which(grepl(mysub,flip_an5$file)==TRUE) #finds file ID in that long file string
+  if(length(w2)>0){
+    crosstask$flip_AN5[i]<-flip_an5$flip_t[w2]
+    crosstask$flip_AN5se[i]<-flip_an5$sdflipt[w2]/sqrt(flip_an5$flipt_DF[w2])
+  }
+     w3<-which(grepl(mysub,flip_ppt1$file)==TRUE) #finds file ID in that long file string
+  if(length(w1)>0){
+    crosstask$flip_PPT1[i]<-flip_ppt1$flip_t[w3]
+    crosstask$flip_PPT1se[i]<-flip_ppt1$sdflipt[w3]/sqrt(flip_ppt1$flipt_DF[w3])
+  }
+}
+
+
+
+```
+
+
+```{r function_dofigure,echo=FALSE, messgae = FALSE,warning=FALSE} 
+#As we'll make several figures of this kind, we'll make a generic function
+dofigure <- function(plotdata,L1,L2,colourcol,pchcol,xlab,ylab,captiontitle1,captiontitle2,xlim,ylim,correlcoef,BlandAltmanlimit,L1se,L2se,showpch){
+
+  myfig <- ggplot(plotdata, aes(x = L1, y = L2,col=colourcol,pch=pchcol)) + 
+  geom_point()+
+  #theme_bw()+
+  xlab(xlab) +  
+  ylab(ylab) + 
+  xlim(xlim) + ylim(ylim) +
+  geom_errorbar(aes(ymin = L2 - L2se, ymax = L2 + L2se),linetype = "solid",size=.3) + 
+  geom_errorbarh(aes(xmin = L1 - L1se, xmax = L1 + L1se), linetype = "solid",size=.3) +
+  annotate("text",x = 2, y = -1, label = paste('r = ', correlcoef),col='black') +
+  geom_hline(yintercept = 0, linetype="solid", alpha = 0.8) + 
+  geom_vline(xintercept = 0, linetype= "solid", alpha = 0.8)  + 
+  geom_abline(intercept = 0, slope = 1,size=.5,col='grey')+
+  geom_abline(intercept = BlandAltmanlimit, slope = 1,linetype="dashed",size=.5,col='grey')+
+  geom_abline(intercept = -BlandAltmanlimit, slope = 1,linetype="dashed",size=.5,col='grey')+
+  scale_color_discrete(name = captiontitle1)+
+    guides(pch=FALSE)
+  
+return(myfig)
+}
+```
+
+
+Now we can look at some comparisons - start within task
+
+```{r exploreplots}
+# Correlation between L1 and L2
+L1_L2_corr <- cor.test (crosstask$GAMdopWG, crosstask$boot_LI_WG, 
+                        method = "spearman", 
+                        exact = FALSE)
+
+plotdata=crosstask
+L2 = crosstask$GAMdopWG
+L1 = crosstask$boot_LI_WG
+colourcol = crosstask$handcolour
+pchcol = crosstask$pchcol 
+ xlab="Doppler GAM LI for WG"
+ylab="fMRI bootstrapped LI for WG"
+captiontitle1 = "Handed"
+captiontitle2 = " "
+xlim= c(min(L1),max(L1))
+ylim = c(-1,1)
+correlcoef <- round(cor.test (L1, L2, method = "spearman",  exact = FALSE)$estimate,3)
+ BlandAltmanlimit = 2.5
+ L2se = 1.96*crosstask$GAMdopWGse
+ L1se = 1.96*crosstask$boot_LI_WGse
+showpch = 0
+
+myfig1 <- dofigure(crosstask, L1, L2 ,colourcol ,pchcol, xlab,ylab,captiontitle1,captiontitle2,xlim,ylim ,correlcoef, BlandAltmanlimit, L1se, L2se,showpch)
+
+
+L2 = crosstask$flip_WG
+ylab='fMRI flip t'
+ylim = c(min(L2),max(L2))
+correlcoef <- round(cor.test (L1, L2, method = "spearman",  exact = FALSE)$estimate,3)
+L2se = crosstask$flip_WGse
+
+myfig2 <- dofigure(crosstask, L1, L2 ,colourcol ,pchcol, xlab,ylab,captiontitle1,captiontitle2,xlim,ylim ,correlcoef, BlandAltmanlimit, L1se, L2se,showpch)
+
+L1 = crosstask$GAMdopPPT
+L2 = crosstask$boot_LI_PPT5
+ xlab="Doppler GAM LI for PPT"
+ylab="fMRI bootstrapped LI for PPT5"
+xlim= c(min(L1),max(L1))
+ylim = c(min(L2),max(L2))
+correlcoef <- round(cor.test (L1, L2, method = "spearman",  exact = FALSE)$estimate,3)
+ L1se = crosstask$GAMdopPPTse
+ L2se = crosstask$boot_LI_PPT5se
+myfig3 <- dofigure(crosstask, L1, L2 ,colourcol ,pchcol, xlab,ylab,captiontitle1,captiontitle2,xlim,ylim ,correlcoef, BlandAltmanlimit, L1se, L2se,showpch)
+
+L2 = crosstask$flip_PPT5
+ylab='fMRI flip t PPT5'
+ylim = c(min(L2),max(L2))
+correlcoef <- round(cor.test (L1, L2, method = "spearman",  exact = FALSE)$estimate,3)
+L2se = crosstask$flip_PPT5se
+
+myfig4 <- dofigure(crosstask, L1, L2 ,colourcol ,pchcol, xlab,ylab,captiontitle1,captiontitle2,xlim,ylim ,correlcoef, BlandAltmanlimit, L1se, L2se,showpch)
+
+L2 = crosstask$flip_PPT1
+ylab='fMRI flip t PPT1'
+ylim = c(min(L2),max(L2))
+correlcoef <- round(cor.test (L1, L2, method = "spearman",  exact = FALSE)$estimate,3)
+L2se = crosstask$flip_PPT1se
+
+myfig5 <- dofigure(crosstask, L1, L2 ,colourcol ,pchcol, xlab,ylab,captiontitle1,captiontitle2,xlim,ylim ,correlcoef, BlandAltmanlimit, L1se, L2se,showpch)
+
+mymat<-cbind(crosstask$GAMdopWG,crosstask$boot_LI_WG,crosstask$flip_WG)
+pairs(mymat,c('Doppler','Toolbox','Flip'))
+mymat<-cbind(crosstask$GAMdopPPT,crosstask$boot_LI_PPT5,crosstask$flip_PPT5)
+pairs(mymat,c('Doppler','Toolbox','Flip'))
+mymat<-cbind(crosstask$GAMdopPPT,crosstask$flip_PPT1)
+pairs(mymat,c('Doppler','Flip'))
+mymat<-cbind(crosstask$boot_LI_AN5,crosstask$flip_AN5)
+pairs(mymat,c('Toolbox','Flip'))
+mymat<-cbind(crosstask$GAMdopWG,crosstask$GAMdopPPT)
+pairs(mymat,c('WG','PPT'))
+mymat<-cbind(crosstask$boot_LI_WG,crosstask$boot_LI_PPT5,crosstask$boot_LI_AN5)
+pairs(mymat,c('WG','PPT5','AN'))
+mymat<-cbind(crosstask$flip_WG,crosstask$flip_PPT5,crosstask$flip_AN5)
+pairs(mymat,c('WG','PPT5','AN'))
+mymat<-cbind(crosstask$flip_WG,crosstask$flip_PPT1,crosstask$flip_AN5)
+pairs(mymat,c('WG','PPT1','AN'))
+```
+
