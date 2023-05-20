@@ -158,6 +158,7 @@ Now we can look at some comparisons - start within task
 
 ```{r tryplot}
 #column with 'diff'
+#method options are "Doppler","flip","toolbox" - if both methods=='flip' then do LR
 method1 <- 'Doppler'
 method2 <- 'flip'
 mytask <- 'PP1'
@@ -167,6 +168,7 @@ if(method1=='Doppler' || method2 =='Doppler')
 
 xfile <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
 yfile <-  filter(bigdf,method==method2 & task==mytask & mask==mymask)
+
 
 #Check that rows are equivalent
 s<-c(xfile$id,yfile$id)
@@ -198,3 +200,30 @@ myplot <- ggplot(data = forplot,aes(x = x,y = y)) +
 
 ```
 
+
+```{r LRplot}
+#column with 'diff'
+method1 <- 'flip'
+mytask <- 'AN5'
+mymask <- 'parietal'
+
+forplot <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
+names(forplot)[2:3]<-c('Left','Right')
+
+
+correlcoef <- round(cor.test (forplot$Left, forplot$Right, method = "spearman",  exact = FALSE)$estimate,3)
+
+myplot <- ggplot(data = forplot,aes(x = Right,y = Left)) + 
+  geom_point(aes(col=lat_group),size=2)+
+  geom_hline(yintercept = 0, linetype="solid",col='grey') + 
+  geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
+  geom_abline(intercept=0,slope=1,linetype= "dotted", col='black')+
+  xlab("Activation R")+
+  ylab("Activation L")+
+  ggtitle(paste0(mymask,": ",mytask))+
+  annotate("text",x = -.5, y = 1.5, label = paste('r = ', correlcoef),col='black')
+ 
+
+
+
+```
