@@ -22,21 +22,21 @@ require(janitor) #clean up names from external files
 
 3 tasks: Word Generation, Auditory Naming and Pyramids and Palm Trees.  
 (Also for ftcd on WG and PPT but not AN).
-For WG comparison is with rest (contrast 1).
-for AN it is with backward speech (contrast 5).   
-for PPT it is with line judgement (contrast 5).  
+For WG1 comparison is with rest (contrast 1).
+for AN5 it is with backward speech (contrast 5).   
+for PP5 it is with line judgement (contrast 5).  
+PP1 is semantic judgement vs rest
+PP3 is line drawings vs rest
 
-We have data from LI toolbox analysis (already done by Zoe - which includes N voxels - though that seems odd as with bootstrap N voxels is constant? She told me she had hacked into script to get this - maybe this is N voxels at a specific threshold?). For now will read in just the regular LIs for the MCA mask.  
-Will eventually want to redo these I think to just check that settings are the same. I also need some indication of confidence interval for these. 
+We have data from LI toolbox analysis (already done by Zoe - which includes N voxels - though that seems odd as with bootstrap N voxels is constant? She told me she had hacked into script to get this - maybe this is N voxels at a specific threshold?). For now will read in just the regular LIs. 
 
-We also now have data from my flip method, which includes t-values as well as means for L and R volumes. 
+We also now have data from my flip method, which includes differences and 95% CI for differences, plus t-values as well as means for L and R volumes. 
 
-And I need to read latest fTCD LIs using GAM method. May need to run these for PPT?
+Also have latest fTCD LIs using GAM method for WG1 and PP1
 
-So let's start by seeing what data we can read in from existing files. 
-Just remembered that I need to use tstat data, so I am going to rerun LI toolbox
+All LI and flip rerun using tstat data
 
-NB one missing file for AN and one for PPT. I am just editing the .csv files manually to deal with this for now
+NB one missing file for AN and one for PPT. 
  AN is missing subject 085, and PPT is missing subject 068
 
 
@@ -45,8 +45,7 @@ demog <- read_csv(here("Bruckert","_bruckert_summarydat.csv"))
 # we'll use this just for demographics, handedness etc
 allLI <- read.csv(here("Bruckert","LIComparisons","li_toolbox_all_tasks_masks_LB.csv"))
 allLI <- clean_names(allLI)
-w<-which(names(allLI)=='inclusive_mask')
-names(allLI)[w] <- 'mask'
+allLI$id <- substr(allLI$id,1,3) #just first 3 chars
 
 #find task buried in input_image
 allLI$task <- NA
@@ -58,38 +57,23 @@ for (t in 1:length(task)){
   allLI$task[w] <-task[t]
 }
 
-mymask <- 'parietal'  #for this file options are cerebellar,frontal,parietal,temporal,mca
-maskname <- paste0('LI-',mymask,'-mask.img,1')
-LI_an5 <- filter(allLI,task=='AN5',mask==maskname)
-LI_wg1 <- filter(allLI,task=='WG1',mask==maskname)  
-LI_pp5 <- filter(allLI,task=='PP5',mask==maskname) 
-LI_pp1 <- filter(allLI,task=='PP1',mask==maskname) 
-LI_pp3 <-filter(allLI,task=='PP3',mask==maskname)  
+mask <- c('mca','frontal','temporal','parietal','cerebellar')
+allLI$mask <- NA
+for (m in 1:length(mask)){
+  maskname <- paste0('LI-',mask[m],'-mask.img,1')
+   w<-which(grepl(maskname,allLI$inclusive_mask)==TRUE)
+  allLI$mask[w] <-mask[m]
+}
 
 
 
-# flip_an5 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_AN5_MCA_1000_1.csv"))
-# flip_pp5 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_PP5_MCA_1000_1.csv"))
-# flip_pp1 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_PP1_MCA_1000_1.csv"))
-# flip_pp3 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_PP3_MCA_1000_1.csv"))
-# flip_wg1 <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_WG1_MCA_1000_1.csv"))
-
-#flip files have extraneous chars at start of ID - (for those with 1%)
-# flip_an5$ID <- sub('/AN5/','',flip_an5$ID)
-# flip_pp5$ID <- sub('/PP5/','',flip_pp5$ID)
-# flip_pp3$ID <- sub('/PP3/','',flip_pp3$ID)
-# flip_pp1$ID <- sub('/PP1/','',flip_pp1$ID)
-# flip_wg1$ID <- sub('/WG1/','',flip_wg1$ID)
-
-#flip files with 5% don't seem to have ID at all!
-#oops and the filename is same for all - ohdear. need to fix matlab file
+#flip files with 5% selected (can substitute another file if need be)
 flip_all <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_all_1000_5.csv"))
-if(mymask=='mca') mymask <- 'MCA' #capitalised in big flip file
-flip_an5 <- filter(flip_all,task=='AN5',mask==mymask)
-flip_wg1 <- filter(flip_all,task=='WG1',mask==mymask)
-flip_pp1 <- filter(flip_all,task=='PP1',mask==mymask)
-flip_pp3 <- filter(flip_all,task=='PP3',mask==mymask)
-flip_pp5 <- filter(flip_all,task=='PP5',mask==mymask)
+flip_all<-clean_names(flip_all)
+w<-which(flip_all$mask=='MCA')
+flip_all$mask[w]<-'mca'
+flip_all$id<-substr(flip_all$id,1,3)
+
 
 #Now find the GAM values for doppler
 dop_wg1 <- read.csv(here("Bruckert","LIComparisons","DopplerGAM_WG1.csv"))
@@ -99,131 +83,114 @@ dop_wg1$C_hiCI <- dop_wg1$C_LI.est+1.96*dop_wg1$C_LIest.se
 dop_pp1$C_lowCI <- dop_pp1$C_LI.est-1.96*dop_pp1$C_LIest.se
 dop_pp1$C_hiCI <- dop_pp1$C_LI.est+1.96*dop_pp1$C_LIest.se
 
-mylist <- list(dop_wg1,dop_pp1,
-               flip_wg1,flip_an5,flip_pp1,flip_pp3,flip_pp5,
-               LI_wg1,LI_an5,LI_pp1,LI_pp3,LI_pp5)
-#all the files together in list - allows for dynamic referencing
 ```
 
-
-I am going to build a new file with just what we need
-
-```{r buildfile}
-# start with demog file
-keepcols <- c("ID","group_cat", "group_lat","age_at_scan","sex","hand_self_report","hand_EHI")
-alltask <- demog[,keepcols]
-alltask$nonRH <- 1
-alltask$handcolour <- 'red'
-alltask$nonRH[alltask$hand_self_report=="R"] <- 0
-alltask$handcolour[alltask$hand_self_report=="R"]  <-'blue'
-mypch <- c(19,1,10) #filled circle, open circle, circle with cross -hmm not good with ggplot
-alltask$pchcol <- mypch[alltask$group_lat]
-alltask$pchcol <- as.factor(alltask$pchcol)
-alltask$DopLIgroup <- as.factor(alltask$group_lat)
-levels(alltask$DopLIgroup)<- c('Left','Bilateral','Right')
-alltask$subID <- substr(alltask$ID,1,3)
-
-colindex<-ncol(alltask) #base number of columns - we will add to this
-
-# matrix with names of colums to read
-readcolmat <- matrix(c('C_LI.est','C_lowCI','C_hiCI',
-                   'C_LI.est','C_lowCI','C_hiCI',
-                   'meandiff','diff_lowCI','diff_hiCI',
-                   'meandiff','diff_lowCI','diff_hiCI',
-                   'meandiff','diff_lowCI','diff_hiCI',
-                   'meandiff','diff_lowCI','diff_hiCI',
-                   'meandiff','diff_lowCI','diff_hiCI',
-                   'li_wm','li_p5','li_p95',
-                    'li_wm','li_p5','li_p95',
-                    'li_wm','li_p5','li_p95',
-                     'li_wm','li_p5','li_p95',
-                     'li_wm','li_p5','li_p95'),byrow=T,nrow=12)
-writecolmat <- matrix(c('dop_LI','dop_lowCI','dop_highCI',
-                   'dop_LI','dop_lowCI','dop_highCI',
-                   'diff','diff_lowCI','diff_hiCI',
-                   'diff','diff_lowCI','diff_hiCI',
-                   'diff','diff_lowCI','diff_hiCI',
-                   'diff','diff_lowCI','diff_hiCI',
-                   'diff','diff_lowCI','diff_hiCI',
-                   'li_wm','li_lowCI','li_hiCI',
-                   'li_wm','li_lowCI','li_hiCI',
-                   'li_wm','li_lowCI','li_hiCI',
-                  'li_wm','li_lowCI','li_hiCI',
-                  'li_wm','li_lowCI','li_hiCI'),byrow=T,nrow=12)
-mytask <- c('wg1','pp1','wg1','an5','pp1','pp3','pp5','wg1','an5','pp1','pp3','pp5')
-for (m in 1:3){
-for (k in 1:12){
-  writecolmat[k,m]<-paste0(mytask[k],'_',writecolmat[k,m])
-}
-}
-nunames<-as.vector(t(writecolmat)) #add columns to write to
-alltask[,nunames]=NA
-
-
-for (j in 1:length(mylist)){ #mylist contains all the dfs we need
-  myfile <- mylist[[j]]
-
-  for (i in 1:nrow(alltask)){
-      mysub <- alltask$subID[i]
-      #for all file types ID in first column
-       w<-which(substr(myfile[,1],1,3)==mysub ) #first col of myfile has ID
-       if(length(w)>0){
-         readcol1<-which(names(myfile)==readcolmat[j,1])
-         readcol2<-which(names(myfile)==readcolmat[j,2])
-         readcol3<-which(names(myfile)==readcolmat[j,3])
-         writecol1<-which(names(alltask)==writecolmat[j,1])
-         writecol2<-which(names(alltask)==writecolmat[j,2])
-         writecol3<-which(names(alltask)==writecolmat[j,3])
-         alltask[i,writecol1] <- myfile[w,readcol1]
-         alltask[i,writecol2] <- myfile[w,readcol2]
-         alltask[i,writecol3] <- myfile[w,readcol3]
-       }
-  }
-}
-
-#now categorise as L or R or bilat
-
-write.csv(alltask,paste0('alltask_',mymask,'.csv'),row.names=F)
-
-#scale the doppler values by dividing by 6, and the flip values by dividing by 2.5.
+#scale the doppler values by dividing by 6, and the flip values by dividing by 2.7.
 #these values determined by looking at max values
 #Aim to bring into range with the LIs - but not otherwise equiv
 
-#column with 'dop'
-w<-which(grepl('dop',names(alltask))==TRUE)
-alltask[,w]<-alltask[,w]/6
 
-#column with 'diff' (flip)
-w<-which(grepl('diff',names(alltask))==TRUE)
-alltask[,w]<-alltask[,w]/2.5
+```{r makebigdf}
+demog$id <- substr(demog$ID,1,3)
+
+#Long form with methods, tasks, masks all stacked
+bigdf<-flip_all[,c(1,2,3,4,11,12,13,14)]
+
+names(bigdf)[c(4,5,6)]<-c('mean','lowCI','hiCI')
+#scale flip values by dividing by 2.7 (maximum val for hi CI is 2.657)
+bigdf[,4:6]<-bigdf[,4:6]/2.7
+bigdf$method <- 'flip'
+
+#cols for var weighting and clustering just used here as padding for correct N cols
+addbit<-allLI[,c('id','variance_weighting','clustering','li_wm','li_p5','li_p95','mask','task')]
+addbit$method='toolbox'
+addbit[,2:3]<-NA
+names(addbit)<-names(bigdf)
+bigdf<-rbind(bigdf,addbit)
+
+
+#Now add Doppler - just 2 tasks, equiv to WG1 and PP5 - use NExtreme, nFinal,odd and even for padding
+
+dopbit1 <- dop_wg1[,c('Filename','nExtreme','nFinal','C_LI.est','C_lowCI','C_hiCI','odd','even')]
+dopbit1$even <- 'WG1'
+
+dopbit2 <- dop_pp1[,c('Filename','nExtreme','nFinal','C_LI.est','C_lowCI','C_hiCI','odd','even')]
+dopbit2$even <- 'PP1'
+dopbit <- rbind(dopbit1,dopbit2)
+
+dopbit$method <- 'Doppler'
+names(dopbit) <- names(bigdf)
+dopbit$id <- substr(dopbit$id,1,3)
+dopbit[,2:3]<-NA
+dopbit$mask <- 'mca'
+
+#Scale doppler by dividing by 6
+w<-which(names(dopbit)=='mean')
+dopbit[,w:(w+2)]<-dopbit[,w:(w+2)]/6
+
+#now exclude those who did not do fMRI
+w<-which(dopbit$id %in% bigdf$id)
+bigdf<- rbind(bigdf,dopbit[w,])
+
+
+bigdf$hand <- NA
+bigdf$lat_group <- NA
+for (i in 1:nrow(demog)){
+  w<-which(bigdf$id==demog$id[i])
+  bigdf$hand[w]<-demog$hand_self_report[i]
+  bigdf$lat_group[w]<-demog$group_lat[i]
+}
+
+bigdf$nonRH <- 1
+bigdf$handcolour <- 'red'
+bigdf$nonRH[bigdf$hand=="R"] <- 0
+bigdf$handcolour[bigdf$hand=="R"]  <-'blue'
+mypch <- c(19,1,10) #filled circle, open circle, circle with cross -hmm not good with ggplot
+bigdf$pchcol <- mypch[bigdf$lat_group]
+bigdf$pchcol <- as.factor(bigdf$pchcol)
+bigdf$lat_group <- as.factor(bigdf$lat_group)
+levels(bigdf$lat_group)<- c('Left','Bilateral','Right')
+
 ```
-
 
 
 Now we can look at some comparisons - start within task
 
 ```{r tryplot}
 #column with 'diff'
-xname <- 'wg1_li'
-yname <- 'wg1_diff'
-xcol<-which(grepl(xname,names(alltask))==TRUE)
-ycol<-which(grepl(yname,names(alltask))==TRUE)
-h <- which(names(alltask)=='handcolour')
-p<- which(names(alltask)=='DopLIgroup')
-forplot = alltask[,c(p,xcol,ycol)]
+method1 <- 'Doppler'
+method2 <- 'flip'
+mytask <- 'PP1'
+mymask <- 'mca'
+if(method1=='Doppler' || method2 =='Doppler')
+  {mymask <- 'mca'}
 
-colnames(forplot)= c('DopLIgroup','x','xmin','xmax','y','ymin','ymax')
+xfile <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
+yfile <-  filter(bigdf,method==method2 & task==mytask & mask==mymask)
+
+#Check that rows are equivalent
+s<-c(xfile$id,yfile$id)
+mycount<-table(s)
+my2 <- names(which(mycount==2))
+xfile<-xfile[xfile$id %in% my2,]
+yfile <- yfile[yfile$id %in% my2,]
+w<-which(names(xfile)=='mean')
+names(xfile)[w:(w+2)]<-c('x','xmin','xmax')
+names(yfile)[w:(w+2)]<-c('y','ymin','ymax')
+
+forplot<-cbind(xfile,yfile[,w:(w+2)])
+
 correlcoef <- round(cor.test (forplot$x, forplot$y, method = "spearman",  exact = FALSE)$estimate,3)
 
 myplot <- ggplot(data = forplot,aes(x = x,y = y)) + 
-  geom_point(aes(col=DopLIgroup),size=2)+
-  geom_errorbar(aes(ymin = ymin,ymax = ymax,col=DopLIgroup)) + 
-  geom_errorbarh(aes(xmin = xmin,xmax = xmax,col=DopLIgroup))+
+  geom_point(aes(col=lat_group),size=2)+
+  geom_errorbar(aes(ymin = ymin,ymax = ymax,col=lat_group)) + 
+  geom_errorbarh(aes(xmin = xmin,xmax = xmax,col=lat_group))+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
   geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
-  xlab(xname)+
-  ylab(yname)+
-  ggtitle(mymask)+
+  xlab(method1)+
+  ylab(method2)+
+  ggtitle(paste0(mymask,": ",mytask))+
   annotate("text",x = -.5, y = .9, label = paste('r = ', correlcoef),col='black')
  
 
