@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 require(tidyverse)
 require(here)
 require(janitor) #clean up names from external files
+require(ggpubr)
 ```
 
 ## Data from fMRI
@@ -203,16 +204,27 @@ myplot <- ggplot(data = forplot,aes(x = x,y = y)) +
 
 ```{r LRplot}
 #column with 'diff'
+masktitle <- c('MCA','Frontal','Temporal','Parietal','Cerebellar')
+tasktitle <- c('Word Generation','Semantic vs rest','Line vs rest','Semantic vs Line','Auditory Naming')
 method1 <- 'flip'
-mytask <- 'AN5'
-mymask <- 'parietal'
-
+thismask <- 4
+mymask <- mask[thismask]
+allplot <- list()
+mycount <-0
+for (t in c(1,4,5)){ #WG1, PP5, AN5
+mycount <- mycount+1
+mytask <- task[t]
 forplot <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
 names(forplot)[2:3]<-c('Left','Right')
 
 
 correlcoef <- round(cor.test (forplot$Left, forplot$Right, method = "spearman",  exact = FALSE)$estimate,3)
-
+#censor values at 3
+mycensor <- 3
+forplot$Left[forplot$Left< (-mycensor)]<- (-mycensor)
+forplot$Right[forplot$Right< (-mycensor)]<- (-mycensor)
+ forplot$Left[forplot$Left>mycensor]<- mycensor
+ forplot$Right[forplot$Right>mycensor]<- mycensor
 myplot <- ggplot(data = forplot,aes(x = Right,y = Left)) + 
   geom_point(aes(col=lat_group),size=2)+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
@@ -220,10 +232,17 @@ myplot <- ggplot(data = forplot,aes(x = Right,y = Left)) +
   geom_abline(intercept=0,slope=1,linetype= "dotted", col='black')+
   xlab("Activation R")+
   ylab("Activation L")+
-  ggtitle(paste0(mymask,": ",mytask))+
-  annotate("text",x = -.5, y = 1.5, label = paste('r = ', correlcoef),col='black')
+   xlim(-mycensor,mycensor)+
+   ylim(-mycensor,mycensor)+
+  ggtitle(paste0(masktitle[thismask],":\n",tasktitle[t]))+
+  annotate("text",x = -1.2, y = 2.5, label = paste('r = ', correlcoef),col='black')+
+  guides(col=guide_legend(title='Laterality category: fTCD WG'))
+
+
  
-
-
-
+allplot[[mycount]] = myplot
+}
+myallplot <- ggarrange(allplot[[1]],allplot[[3]],allplot[[2]],ncol=3,nrow=1,common.legend=TRUE)
+savename<-paste0('LR_3tasks_',mymask,'.jpg')
+ggsave(here('Plots',savename),myallplot,width=8,height=4,dpi=300)
 ```
