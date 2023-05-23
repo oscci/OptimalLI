@@ -1,5 +1,5 @@
 ---
-title: "Optimizing the measurement of individual differences in language lateralisation: a study using fMRI and functional transcranial Doppler ultrasound"
+title: "Optimizing the measurement of individual differences in language lateralisation: an exploratory study using fMRI and functional transcranial Doppler ultrasound"
 bibliography: fliprefs.bib
 format: html
 editor: visual
@@ -7,7 +7,9 @@ editor: visual
 
 <!--# files in: https://openneuro.org/datasets/ds004073/versions/1.0.0 -->
 
-<!--# for previous attempt at intro see flip method -->
+<!--# for previous attempt at intro see flip method script-->
+
+<!-- #I'd like to submit this to either Neurobiology of Language, or Open Research Europe, which is like Wellcome Open Research, but for work funded by ERC -->
 
 ## Introduction
 
@@ -15,21 +17,25 @@ It has been established for many years that language processing depends on speci
 
 Atypical lateralisation is of considerable theoretical interest to neuroscientists interested in the evolutionary origins and functional significance of laterality. In addition, it is relevant for understanding how individuals recover from unilateral brain injury and for planning epilepsy surgery. We need reliable and convenient methods for measuring functional lateralisation in individuals to further research in this area.
 
-A recent study by [@vingerhoets2023] used the Delphi approach [@hasson2000] to explore expert opinion on measurement of lateralisation using a range of techniques, including functional magnetic resonance imaging (fMRI). It concluded that there was still no agreement about the optimal way to measure lateralisation, and the key concept of bilateral language was ill-defined. A computed laterality index (LI) will depend on the analytic approach, the task, and the region-of-interest (ROI). The authors recommended that more studies were needed to compare different methods, and to establish reliability of different approaches.
+A recent study by @vingerhoets2023 used the Delphi approach [@hasson2000] to explore expert opinion on measurement of lateralisation using a range of techniques, including functional magnetic resonance imaging (fMRI). It concluded that there was still no agreement about the optimal way to measure lateralisation, and the key concept of bilateral language was ill-defined. A computed laterality index (LI) is expected to depend on the task, and the region-of-interest (ROI), but it will also vary depending on the analytic approach. Panel members of the Vingerhoets et al study recommended that more studies were needed to compare different methods. But first we need to consider what would be the characteristics of a good laterality measure, given that there is no 'gold standard' in this field. One consideration is validity:
 
-If we wish to optimise the assessment of individual differences in lateralisation, then the following criteria are of interest:
+a\) The laterality index should demonstrate left-sided lateralisation for language in right-handed individuals
 
-a\) Does the method demonstrate strong left-sided lateralisation in right-handed individuals?
+In addition, if we have a sample who are identified on other criteria as having atypical language lateralisation, then:
 
-b\) How reliable are LIs obtained with this method - as assessed either by indices such as test-retest reliability and/or the size of the standard error around the LI estimate?
+b\) The method should differentiate between those with typical vs atypical language lateralisation
 
-c\) How clearly does the method differentiate between those with typical vs atypical language lateralisation?
+A further set of considerations concern psychometric aspects:
 
-In the current study, we use existing fMRI data to address these questions using first a gold-standard language generation task, and then another semantic judgement task that shows weaker lateralisation at the group level. We consider how three different methods of estimating the LI, and use of different ROIs, affect the answers to a)-c).
+c\) How sensitive are LIs to individual differences? This may be indicated by the confidence interval around a LI estimate
 
-The study by Vingerhoets et al (2023) also considered the assessment of lateralisation by the much simpler technique of functional transcranial Doppler ultrasound (fTCD), which compares blood flow velocity in the left and right middle cerebral arteries during an activation task, relative to a resting baseline period. There was reasonable agreement about best practice using this method, but little is known about how comparable it is to fMRI. Because fTCD is sensitive only to left-right differences in blood flow in the middle cerebral arteries, and cannot indicate localisation of activation within a hemisphere, we might predict that it should agree best with estimates of LI from fMRI when the ROI is a mask covering the whole MCA territory, even though this might not be the optimal ROI from the perspective of points a)-c) above. By comparing the two methods, we can get a better idea of what we are measuring when we use fTCD to estimate the LI, and how far it is a useful proxy for fMRI.
+d\) How reliable is the LI when the same people are retested?
 
-Our study used existing data collected as part of the thesis by [@bruckert2016]. The fTCD data from this project have previously been described by [@bruckert2021], and a subset of the fTCD and fMRI data were used for a paper describing the use of Generalised Models to analyse LIs from fTCD [@thompson2022].
+In the current study, we use existing fMRI data to address the first three questions using three language tasks: Word Generation (verbal fluency), Auditory Naming, and Semantic Matching. <!--# I 've renamed this task to avoid confusion with Semantic Decision in COLA -->We consider how different methods of estimating the LI, and use of different ROIs, affect the answers to a)-c).
+
+The study by Vingerhoets et al (2023) also considered the assessment of lateralisation by the much simpler technique of functional transcranial Doppler ultrasound (fTCD), which compares blood flow velocity in the left and right middle cerebral arteries during an activation task, relative to a resting baseline period. There was reasonable agreement about best practice using this method, but little is known about how comparable it is to fMRI. Because fTCD is sensitive only to left-right differences in blood flow in the middle cerebral arteries, and cannot indicate localisation of activation within a hemisphere, we might predict that it should agree best with estimates of LI from fMRI when the ROI is a mask covering the whole territory of the middle cerebral artery (MCA), even though this might not be the optimal ROI from the perspective of points a)-c) above. By comparing the two methods, we can get a better idea of what we are measuring when we use fTCD to estimate the LI, and how far it is a useful proxy for fMRI.
+
+Our study used existing data collected as part of the thesis by @bruckert2016. The fTCD data from this project have previously been described by @bruckert2021, and a subset of the fTCD and fMRI data were used for a paper describing the use of Generalised Models to analyse LIs from fTCD [@thompson2022].
 
 ## Methods
 
@@ -37,91 +43,37 @@ Our study used existing data collected as part of the thesis by [@bruckert2016].
 
 A within-subjects design was used where participants were tested in two sessions: the first using fTCD, and the second using fMRI. On average, the interval between the two sessions was 11.8 days (range: 1 to 31 days).
 
-In both sessions participants performed two tasks: a speech production task (word generation) and a semantic decision task based on the Pyramids and Palm Trees test [@howard1992]. The tasks were designed to be as similar as possible in the two modalities (fTCD and fMRI), but some minor differences were required as noted below. Hence, the main within-subject independent variables were method (fTCD versus fMRI) and task (word generation versus semantic decision) and the dependent variable was laterality index (LI). For the fMRI analysis, we also considered data from an auditory naming task that was not used with fTCD. The data were acquired as part of a larger study involving the two testing sessions reported here and a later follow-up session which involved administration of a neuropsychological battery and a visual half-field task; for details see [@bruckert2016].
+In both sessions participants performed two tasks: a speech production task (word generation) and a semantic matching task based on the Pyramids and Palm Trees test [@howard1992]. The tasks were designed to be as similar as possible in the two modalities (fTCD and fMRI), but some minor differences were required as noted below. Hence, the main within-subject independent variables were method (fTCD versus fMRI) and task (word generation versus semantic decision) and the dependent variable was laterality index (LI). For the semantic matching task, we included a comparison ("baseline") line judgement task, and we present LIs both from semantic matching vs rest, and semantic matching vs line judgement. <!--# not sure if necessary - currently just sem vs control shown -->
+
+For the fMRI analysis, we also considered data from an auditory naming task that was not used with fTCD. The data were acquired as part of a larger study involving the two testing sessions reported here and a later follow-up session which involved administration of a neuropsychological battery and a visual half-field task; for details see @bruckert2016.
 
 ### **Participants**
 
 Participants were recruited from a sample of 231 individuals who were initially screened with fTCD in the first testing session. These participants were recruited from the Oxford Psychology Research Participant Recruitment Scheme (<https://opr.sona-systems.com>). All participants gave written, informed consent, and all procedures were approved by the Central University Research Ethics Committee of the University of Oxford (MSD-IDREC-C1-20014-003).
 
-In order to obtain a sample with cases of both typical and atypical lateralisation, all 21 participants who showed right lateralised or bilateral activation during word generation in fTCD were invited to return for the second session with fMRI. 16 of these participants agreed to take part and fulfilled all MRI safety criteria. A sample of 16 participants with left lateralisation for word generation in fTCD, matched for age, gender and handedness, were also invited to return for the second session. The final sample that participated in both sessions comprised N=32 participants (14 women, 18 men; 20 right handed, 12 left handed; mean age = 24.9 years, sd = 5.1 years). Due to time constraints, one participant completed only the word generation task and not the semantic decision task in the fTCD session, so the final sample size was N=31 for the analysis of the semantic decision data.
-
-### **Functional Magnetic Resonance Imaging (fMRI)**
-
-#### ***Procedure***
-
-FMRI was acquired in the second session. Participants were first briefed on the imaging protocol and practiced the tasks outside of the scanner. They were then positioned in the scanner and a structural brain image was acquired. Three tasks were then performed in separate runs, each lasting six minutes. As well as word generation and semantic decision, an auditory naming task was also used (data not presented here, see Bruckert 2016 for details). The order of task presentation was counterbalanced between participants.
-
-#### ***Word Generation***
-
-In this task (also known as verbal or phonemic fluency) a letter was presented in the centre of a screen and the participant was required to covertly (silently) generate as many words as possible starting with that letter. After the 'Clear Mind' cue, the letter was presented on screen for 2.5 seconds, followed by a blank screen for 12.5 seconds. Participants were required to covertly generate words beginning with the letter during this period. A block design was used, where a word generation (verbal fluency) task was performed for 15 seconds followed by 15 seconds of rest (with a fixation cross). There were 12 blocks, each with a different letter presented on the screen throughout the duration of the block. The 12 letters (A, B, E, G, J, K, M, N, O, S, U, V) were presented in a randomised order.
-
-#### ***Semantic Decision***
-
-This task was based on the picture version of the Pyramids and Palm Trees test [@howard1992]. A triad of line drawings was presented, one at the top of the screen and two below. The participant was required to decide which of the two pictures below was the closest semantic match to the one at the top and respond by button press. There were 15 trials. For each trial, after the 'Clear Mind' cue, the participant was presented with 8 consecutive picture triads, each lasting 2.5 seconds. Participants reported their decision by keyboard button press using their left or right index fingers. The location of the target picture was counterbalanced so that an equal number of left or right button presses was required. Each fMRI block comprised eight picture triads, each with a duration of 2.5 seconds (20 seconds in total). The participants were required to respond by button press using their left and right thumbs on an MRI-compatible button box.
-
-Unlike the word generation task, an active perceptual baseline was also acquired during the semantic decision fMRI run. This used a line drawing matching task, where triads of abstract line drawings were presented in the same format as for the semantic decision task. Participants were required to detect which of the two drawings at the bottom was a perceptual match to the target drawing at the top and respond by button press.
-
-The run comprised six blocks of semantic decision, six blocks of line decision and six rest blocks (where participants saw a fixation cross for 20 s), presented in a pseudo-randomised order where no condition was shown twice in a row.
-
-#### ***Data Acquisition***
-
-Scanning was performed in a Siemens 3T Trio scanner with a 32-channel head coil. The task stimuli were presented using Presentation Software (Neurobehavioural Systems) with stimulus onset synchronised with the scanner. The stimuli were projected via a mirror mounted on the head coil.
-
-A high resolution T1-weighted MPRAGE was acquired for image registration (TR=2040 ms, TE=4.7 ms, flip angle=8°, 192 transverse slices, 1 mm isotropic voxels). Echo-planar images were acquired to measure change in blood oxygen levels during the behavioural tasks (TR=3s, TE=30 ms, flip angle=90°, 48 axial slices, slice thickness=3 mm, in-plane resolution=3 x 3 mm). \<query in Zoe original 'field maps?\>
-
-#### ***Data Analysis***
-
-Data analysis was conducted using FEAT (the fMRI Expert Analysis Tool) in FSL (FMRIB Software Library, <http://www.fmrib.ox.ac.uk/fsl>). The preprocessing stages included head motion correction through realignment to the middle volume of the EPI dataset; skull stripping using FSL's Brain Extraction Tool (BET; [@smith2002]; spatial smoothing using a 6 mm full-width-half-maximum Gaussian kernel; high-pass temporal filtering at 90 seconds; and unwarping using fieldmaps in FSL's Phase Region Expanding Labeller for Unwrapping Discrete Estimates tool (PRELUDE) and FMRIB's Utility for Geometrically Unwarping EPI (FUGUE; [@jenkinson2003]).
-
-The preprocessed data were entered into first-level (subject-specific) general linear models (GLMs). The word generation and semantic decision runs were analysed separately. The explanatory variables (EVs) in the GLM were: the timecourse of the active tasks (word generation, or semantic decision and line decision) convolved with a double-gamma function; the temporal derivatives of the timecourse EV; and six motion correction parameters as covariates of no interest. For word generation, the contrast of interest was word generation versus the implicit (resting) baseline. For semantic decision, two contrasts were extracted: semantic decision versus the implicit baseline, and semantic decision versus the active baseline (line decision).
-
-The z-statistic maps from these contrasts were used to calculate LI values using the bootstrapping method in the LI Toolbox [@wilke2006], [@wilke2007]. Although it is more conventional to use *t*-statistics, z-statistics are numerically very similar, but benefit from having a more normal distribution. This method (described in Bradshaw, Bishop, & Woodhead, 2017; Wilke & Schmithorst, 2006) takes an iterative approach, first by varying the *z*-threshold applied to the ROI data in 20 equally-spaced thresholds from 0 to the maximum z-value in the image. At each threshold, the bootstrapping procedure takes 100 different re-samples of the z-statistics within the thresholded ROI, where the size of the re-sample is 25% of all voxels by default. An LI value is calculated for every combination of these re-samples (100\*100=10,000 LI values) at each threshold level (20 thresholds x 10,000=200,000 LI values). These are weighted by t-threshold and plotted in a histogram. A trimmed average of all of the weighted LI values is taken, to give a final LI value that is threshold-independent.
-
-#### ***LI Calculation***
-
-The following methods for calculating LI~fMRI~ were compared.
-
-A. Conventional LI, using the formula LI = (L-R) / (L+R).
-
-B. Raw difference in number of activated voxels. Here we followed the same bootstrapping approach, but simply calculated the difference between L-R, without correcting for overall activation (L+R).
-
-C. Flip method \[details to be added?\]
-
-#### ***Regions of Interest***
-
-The LI values were calculated for the following ROIs:
-
-1\) the frontal lobe only;
-
-2\) the temporal lobe only;
-
-3\) a combined mask of the frontal, temporal and parietal lobes as an approximation of the MCA territory;
-
-4\) the whole cerebral hemisphere minus the cerebellum
-
-5\) the cerebellum.
-
-All masks excluded 5mm either side of the midline and were created using templates provided in the LI Toolbox, which are based on a population-based atlas (Hammers et al., 2003).
-
-\<DB question - I assume these are not symmetrical masks?\>
+In order to obtain a sample with cases of both typical and atypical lateralisation, all 21 participants who showed right lateralised or bilateral activation during word generation in fTCD were invited to return for the second session with fMRI. This classification was based on whether or not the confidence interval (CI) for the LI index on Word Generation crossed zero, where the CI was derived from the standard error of the LIs obtained on individual trials. 16 of these participants agreed to take part and fulfilled all MRI safety criteria. A sample of 16 participants with left lateralisation for word generation in fTCD, matched for age, gender and handedness, were also invited to return for the second session. The final sample that participated in both sessions comprised 32 participants (14 women, 18 men; 20 right handed, 12 left handed; mean age = 24.9 years, SD = 5.1 years). Due to time constraints, one participant completed only the word generation task in the fTCD session, so the final sample size was N=31 for analyses including fTCD semantic matching data.
 
 ### **Functional Transcranial Doppler Ultrasound (fTCD)**
 
 #### ***Procedure***
 
-FTCD was acquired during the first session. Participants were trained to perform the two tasks and completed some practice trials; then the fTCD headset and probes were fitted and a stable signal was found. The fTCD signal was then recorded, first for the word generation task, then for the semantic decision task, with a break in between.
+FTCD was acquired during the first session. Participants were trained to perform the two tasks and completed some practice trials; then the fTCD headset and probes were fitted and a stable signal was found. The fTCD signal was then recorded, first for the word generation task, then for the semantic matching task, with a break in between.
 
 The timings for the two tasks are shown in Figure 1. Both tasks had a trial structure that started with a 'Clear Mind' instruction on screen (5 seconds), followed by the task for 20 seconds, and ending with 25 seconds of a rest where the word 'Relax' was presented on screen. Participants were instructed to stay still and think of as little as possible during the 'Relax' period. The onset of the 'Clear Mind' cue was taken as the start of the trial (peri-stimulus time = 0s).
 
+Data and materials can be found on Open Science Framework: <https://osf.io/tkpm2/>. Scripts and outputs for fTCD analyses can be found at <https://osf.io/gw4en/>.
+
 ### ***Word Generation***
 
-This task was the same as that used in fMRI, except that there were 23 trials, and in each trial, the participant first silently generated words for 5 seconds, and then overtly reported the words they had generated. (Overt generation was not used with fMRI to reduce movement artefact). The time course is illustrated in Figure 1.
+In this task (also known as verbal or phonemic fluency) a letter was presented in the centre of a screen and the participant was required to covertly (silently) generate as many words as possible starting with that letter. There were 23 trials, each with a different letter (excluding Q, X and Z) presented in a randomised order. After the 'Clear Mind' cue, the letter was presented on screen for 2.5 seconds, followed by a blank screen for 12.5 seconds. Participants were required to covertly generate words beginning with the letter during this period. A 'Say Words' cue was then presented for 5 seconds, during which participants were required to overtly report the words they had generated. The time course is illustrated in Figure 1.
 
-![Figure 1. Time-course of trials in expressive (word generation) and receptive (semantic decision) tasks.](images/Fig1_ftcd_timings.png)
+![Figure 1. Time-course of trials in expressive (word generation) and receptive (semantic matching) tasks. <!--# need to redo name in figure decision->match -->](images/Fig1_ftcd_timings.png){alt="Figure 1. Time-course of trials in expressive (word generation) and receptive (semantic decision) tasks."}
 
-### ***Semantic Decision***
+### ***Semantic Matching***
 
-This was the same task as for fMRI. There were 15 trials. For each trial, after the 'Clear Mind' cue, the participant was presented with 8 consecutive picture triads, each lasting 2.5 seconds. The time course is shown in Figure 1. Participants reported their decision by keyboard button press using their left or right index fingers. The location of the target picture was counterbalanced so that an equal number of left or right button presses was required.
+<!--# to avoid confusion with COLA data, I have changed the name-->
+
+In the semantic matching task (based on the picture version of the Pyramids and Palm Trees test; @howard1992) a triad of line drawings was presented, one at the top of the screen and two below. The participant was required to decide which of the two pictures below was the closest semantic match to the one at the top and respond by button press. There were 15 trials. For each trial, after the 'Clear Mind' cue, the participant was presented with 8 consecutive picture triads, each lasting 2.5 seconds. Participants reported their decision by keyboard button press using their left or right index fingers. The location of the target picture was counterbalanced so that an equal number of left or right button presses was required. The time course of trials is shown in Figure 1.
 
 ### ***Data Acquisition***
 
@@ -129,31 +81,93 @@ The fTCD data were recorded from the left and right middle cerebral arteries (MC
 
 ### ***Data Analysis***
 
-The fTCD probes recorded the cerebral blood flow volume (CBFV) from left and right middle cerebral arteries (MCAs) while participants performed the tasks. The CBFV data were analysed using custom scripts in R Studio (RStudio Team, 2015). The analysis followed the process described by [@woodhead2019]. In brief, the this included downsampling from 100Hz to 25Hz; epoching from -12 s to 30 s peri-stimulus time; artefact rejection (both manual for gross artefacts and automatic for signal intensities outside of the 0.0001-0.9999 quantiles); signal normalisation; heart cycle integration; baseline correction using ten seconds of rest immediately preceding each trial as a baseline level; a final artefact detection stage where trials containing signal below 60% or above 100% of the mean normalised CBFV were rejected; and averaging of all trials (excluding rejected trials) for each task.
+The fTCD probes recorded the cerebral blood flow volume (CBFV) from left and right middle cerebral arteries (MCAs) while participants performed the tasks. The CBFV data were analysed using custom scripts in R Studio (RStudio Team, 2015). The analysis followed the process described by @woodhead2019. In brief, the this included downsampling from 100 Hz to 25 Hz; epoching from -12 s to 30 s peri-stimulus time; artefact rejection (both manual for gross artefacts and automatic for signal intensities outside of the 0.0001-0.9999 quantiles); signal normalisation; heart cycle integration; baseline correction using ten seconds of rest immediately preceding each trial as a baseline level; a final artefact detection stage where trials containing signal below 60% or above 100% of the mean normalised CBFV were rejected; and averaging of all trials (excluding rejected trials) for each task.
 
 ### ***LI Calculation***
 
-For LI calculation we adopted the Generalised Additive Model approach described by [@thompson2022], as this is comparable to the Generalised Linear Model method used with fMRI. Note that the individual LI values obtained with this method are closely comparable to those obtained by subtracting averaged left and right cerebral blood flow velocities; however, the LI estimates have smaller standard errors than more traditional methods.
+For LI calculation we departed from the method used by Bruckert (2016) and adopted the Generalised Additive Model approach described by @thompson2022, which is more comparable to the Generalised Linear Model method used with fMRI. Note that, as shown by Thompson et al (2022), the individual LI values obtained with this method are closely comparable to those obtained by subtracting averaged left and right cerebral blood flow velocities; however, the LI estimates have smaller standard errors than those from more traditional methods.
 
 ### ***Data Quality***
 
-The data was checked for adequate quality in two ways. Firstly, if any participant had more than 20% of trials rejected (i.e. more than 5 trials for word generation or more than 3 trials for semantic decision), the participant would be excluded from the analysis. Secondly, the trial-by-trial variability was assessed using the standard error of LI values for each trial. The fTCD data was previously analysed as part of a larger sample of 156 participants (Bruckert et al, 2019). Outlier standard error values were identified in that dataset, and excluded from the analysis.
+The data was checked for adequate quality in two ways. Firstly, if any participant had more than 20% of trials rejected (i.e. more than 5 trials for word generation or more than 3 trials for semantic matching), the participant would be excluded from the analysis. Secondly, the trial-by-trial variability was assessed using the standard error of LI values for each trial. The fTCD data was previously analysed as part of a larger sample of 156 participants (Bruckert et al, 2019). Outlier standard error values were identified in that dataset, and excluded from the analysis.
 
 No participants were excluded from the current analysis on the basis of these two quality checks.
 
+## 
+
+### **Functional Magnetic Resonance Imaging (fMRI)**
+
+#### ***Procedure***
+
+FMRI was acquired in the second session. Participants were first briefed on the imaging protocol and practiced the tasks outside of the scanner. They were then positioned in the scanner and a structural brain image was acquired. Three tasks were then performed in separate runs, each lasting six minutes. As well as word generation and semantic matching, an auditory naming task was also used. The order of task presentation was counterbalanced between participants.
+
+#### ***Word Generation***
+
+This task was performed similarly to in fTCD, but owing to fMRI's greater susceptibility to motion artefacts there was no overt word reporting phase. A block design was used, where the task was performed for 15 seconds followed by 15 seconds of rest (with a fixation cross). There were 12 blocks, each with a different letter presented on the screen throughout the duration of the block. Participants were required to covertly think of as many words as they could starting with that letter. The 12 letters (A, B, E, G, J, K, M, N, O, S, U, V) were presented in a randomised order.
+
+#### ***Semantic Matching***
+
+The picture triad stimuli were presented similarly to in fTCD. Each fMRI block comprised eight picture triads, each with a duration of 2.5 seconds (20 seconds in total). The participants were required to respond by button press using their left and right thumbs on an MRI-compatible button box.
+
+Unlike the word generation task, a comparison task (active perceptual baseline) was also acquired during the semantic matching fMRI run. This used a line drawing matching task, where triads of abstract line drawings were presented in the same format as for the semantic matching task. Participants were required to detect which of the two drawings at the bottom was a perceptual match to the target drawing at the top and respond by button press.
+
+The run comprised six blocks of semantic matching, six blocks of line decision and six rest blocks (where participants saw a fixation cross for 20 s), presented in a pseudo-randomised order where no condition was shown twice in a row.
+
+#### ***Auditory naming***
+
+The auditory naming paradigm (AN) was based on the Auditory Responsive Naming task [@bookheimer1998] and identical to the one used by @badcock2012a, who adapted this task for the use in FMRI. Participants heard short definitions of a high frequency nouns through MRI compatible in-ear headphones (model S14, Sensimetrics), and were required to silently generate the described word (e.g. the participant heard 'shines in the sky' and thinks of 'sun'). Because this task used an auditory presentation, which creates substantial activation in auditory cortex, a reversed speech condition (same recordings played backwards) was included, so the effect of auditory stimulation could be controlled for.
+
+***Data Acquisition***
+
+Scanning was performed in a Siemens 3T Trio scanner with a 32-channel head coil. The task stimuli were presented using Presentation Software (Neurobehavioural Systems) with stimulus onset synchronised with the scanner. The stimuli were projected via a mirror mounted on the head coil.
+
+A high resolution T1-weighted MPRAGE was acquired for image registration (TR=2040 ms, TE=4.7 ms, flip angle=8°, 192 transverse slices, 1 mm isotropic voxels). Echo-planar images were acquired to measure change in blood oxygen levels during the behavioural tasks (TR=3s, TE=30 ms, flip angle=90°, 48 axial slices, slice thickness=3 mm, in-plane resolution=3 x 3 mm). \<query in Zoe original 'field maps? \>
+
+#### ***Data Analysis***
+
+Data analysis was conducted using FEAT (the fMRI Expert Analysis Tool) in FSL (FMRIB Software Library, <http://www.fmrib.ox.ac.uk/fsl>). The preprocessing stages included head motion correction through realignment to the middle volume of the EPI dataset; skull stripping using FSL's Brain Extraction Tool (BET; [@smith2002]; spatial smoothing using a 6 mm full-width-half-maximum Gaussian kernel; high-pass temporal filtering at 90 seconds; and unwarping using fieldmaps in FSL's Phase Region Expanding Labeller for Unwrapping Discrete Estimates tool (PRELUDE) and FMRIB's Utility for Geometrically Unwarping EPI (FUGUE; @jenkinson2003).
+
+The preprocessed data were entered into first-level (subject-specific) general linear models (GLMs). The word generation and semantic matching runs were analysed separately. The explanatory variables (EVs) in the GLM were: the timecourse of the active tasks (word generation, or semantic matching and line decision) convolved with a double-gamma function; the temporal derivatives of the timecourse EV; and six motion correction parameters as covariates of no interest. For word generation, the contrast of interest was word generation versus the implicit (resting) baseline. For semantic matching, two contrasts were extracted: semantic matching versus rest, and semantic matching versus line decision. For auditory naming, one contrast was used, i.e., auditory naming vs reversed speech.
+
+<!--# need to have more detail here on FLIRT - can put processing scripts on OSF-->
+
+#### ***LI Calculation***
+
+The following methods for calculating LI~fMRI~ were compared:
+
+1.  Conventional threshold-independent LI
+
+    The t-statistic maps <!--# I have redone all analyses with t-maps --> were used to calculate LI values using the conventional formula LI = (L-R) / (L+R). The bootstrapping method in the LI Toolbox [@wilke2006; @wilke2007] was used to give a threshold-independent LI for each task and ROI. This method (described in @bradshaw2017; @wilke2007 ) takes an iterative approach, first by varying the t-threshold applied to the ROI data in 20 equally-spaced thresholds from 0 to the maximum t-value in the image. At each threshold, the bootstrapping procedure takes 100 different re-samples of the t-statistics within the thresholded ROI, where the size of the re-sample is 25% of all voxels by default. An LI value is calculated for every combination of these re-samples (100\*100=10,000 LI values) at each threshold level (20 thresholds x 10,000=200,000 LI values). These are plotted in a histogram and weighted by t-threshold. A trimmed mean of all of the weighted LI values is taken, to give a final LI value that is threshold-independent.
+
+2.  Flip method
+
+    We explored a version of the flip method, which was used by @watkins2001 to assess structural asymmetries in human MRI. In this method, rather than assessing how many voxels are activated in left and right hemispheres, the right-brain image is flipped and then subtracted from the left-brain image.
+
+    The flip method has occasionally been applied to functional MRI (@baciu2005; @cousin2007) but there is little consensus on how to derive an individual LI from this approach. To minimise spatial dependencies between voxels, we took 1000 samples, each containing a random 1% of voxels in the region, and then computed the mean difference score for each sample. The 5th and 95th percentiles were taken from the 1000 estimates to give a confidence interval around the difference score. Note that this method is threshold-independent, with all t-map values being included, regardless of whether positive or negative.
+
+    To make it easier to visualise the flip method data on the same scale as the LI toolbox data, the flip differences were divided by 2.5, so that the scale maximum was 1.0. Note, however, that these values are not conventional laterality indices, as they are simple differences, rather than proportions. We refer to these as scaled flip differences.
+
+    In line with recommendations from Vingerhoets et al (2023), we report the mean activation scores for voxels on the left and right side as well as the mean difference scores.
+
+#### ***Regions of Interest***
+
+The LI values were calculated for the following ROIs:
+
+1\) A combined mask of the frontal, temporal and parietal lobes as an approximation of the MCA territory; <!--# I'm not sure if the MCA mask that Zoe provided is the same as this - I have one called 'MCA' and another called 'frontal_temporal_parietal' --> This mask was selected for comparability to the fTCD method, where the LI is based on comparisons of blood flow in left and right MCAs.
+
+2\) The frontal lobe only; This region gives reliable laterality in fMRI for language production tasks.
+
+3\) The temporal lobe only; We might anticipate that this region would be more implicated in tasks involving receptive language, i.e., Auditory Naming, which involves comprehending spoken language and then generating a response and Semantic Comparison, which involves semantic interpretation.
+
+4\) The cerebellum. Pathways from cerebellum to frontal lobes are crossed, and one might expect to see right-sided lateralisation for language tasks from this region.
+
+All masks were symmetrical and excluded 5 mm either side of the midline and were created using templates provided in the LI Toolbox, which are based on a population-based atlas (Hammers et al., 2003).
+
 ## **Data Analysis**
 
-The first set of analyses involve comparing the LIs from fMRI for each combination of task x LI method x ROI in terms of three characteristics:
+The first set of analyses involved comparing the LIs from fMRI for each combination of task x LI method for the MCA mask. Following the rationale provided in the introduction, our interest was in (a) the extent to which the LI index was left-lateralised in those with typical lateralisation on fTCD Word Generation; (b) the extent to which those with typical and atypical lateralisation were differentiated; and (c) the confidence interval around the LI estimates.
 
-a\) The difference of the mean LI from zero for those participants who had been selected as cases of typical language lateralisation using fTCD. The goal was to see whether one analytic approach stood out as giving strong values of LI.
-
-b\) The standard error of the LI for all participants.
-
-c\) The mean difference in LI between those who had been identified using fTCD as typical vs atypical in terms of language lateralisation.
-
-These analyses were exploratory rather than hypothesis-testing, with the goal of seeing whether a particular combination of task x method x ROI would emerge as optimal on all three indicators, i.e. large LI in typical cases, small standard error of LI, and large difference between typical and atypical cases.
-
-Normality of the LI values was tested with Shapiro Wilk's tests, and the distribution was visualised with histograms.
+These analyses were exploratory rather than hypothesis-testing, with the goal of seeing whether a particular combination of task x method would emerge as optimal on all three indicators, i.e. large LI in typical cases, large difference between typical and atypical cases and small standard error of LI.
 
 A second set of analyses was conducted to look at the agreement between LI estimates from fMRI obtained using different ROIs and those from fTCD for the two tasks, focusing on the fMRI method that appeared to be optimal on criteria a-c.
 
@@ -161,42 +175,212 @@ The similarity between LI~fMRI~ and LI~fTCD~ was assessed using scattergraphs an
 
 ## Results
 
-```{r readLIs}
-lisadat<-read.csv(here('bruckert','!Chapter5_fMRI_data.csv'))
-typs<-filter(lisadat,group_cat==0)
-atyps<-filter(lisadat,group_cat==1)
-task<-c('wg','pptt','pptt_lines')
-ROI<-c('whole','frontal','temporal','MCA')
-LImeth<-c('new','diff')
-#wanted<-names(lisadat)[c(2,3,7,44:52,61:77)]
-  df1<-data.frame(matrix(NA,nrow=(length(ROI)+1)*3,ncol=4))
-  colnames(df1)<-c('condition','t_Typ_zero','t_Typ_Atyp','mean SE')
-  df1[,1]<-c(task[1],ROI,task[2],ROI,task[3],ROI)
-  df2<-df1
-  thisrow<-0
+### 1. Comparison of task, LI method and ROI for fMRI data
 
-for (t in 1:3){ #task
-thisrow<-thisrow+1
-for (r in 1:4){ #ROI
-  thisrow<-thisrow+1
+```{r packages, echo=F, warnings=F}
+require(here)
+require(kableExtra)
+require(RNifti)
+require(tidyverse)
+require(RVAideMemoire) #for spearman ci
+```
+
+```{r readLIs, echo=F}
+options(knitr.kable.NA = '')
+ROI='cerebellum'
+alltask<-read.csv(here('alltask.csv'))
+alltask<-filter(alltask,mask==)
+typs<-filter(alltask,group_cat==0)
+atyps<-filter(alltask,group_cat==1)
+task<-c('wg1','an5','pp5','pp1','pp3')
+longtask<-c('Word Generation','Auditory Naming','Semantic Match vs Lines','Semantic Match alone','Lines Alone')
+#ROI<-c('frontal','temporal','MCA','whole')
+
+LImeth<-c('Toolbox','Flip')
+mymeth<-c('li','diff')
+postbit <- c('_wm','')
+#wanted<-names(lisadat)[c(2,3,7,44:52,61:77)]
+df1<-data.frame(matrix(NA,nrow=(length(task)*(1+length(mymeth))),ncol=8))
+colnames(df1)<-c('condition','mean Typ','sd Typ','mean Atyp','sd Atyp','t_Typ_zero','t_Typ_Atyp','CI range')
+df1[seq(1,(3*length(task)),by=3),1] <- longtask
+df2<-df1
+thisrow<-1
+
+for (t in 1:length(task)){ #task
   for (m in 1:2){ #method
-  mycol<-paste0('fMRI_',LImeth[m],'_',task[t],'_',ROI[r])
-  w<-which(names(lisadat)==mycol)
-  t1<-t.test(typs[,w])
-  t2<-t.test(typs[,w],atyps[,w])
-  if(m==1){
-  df1[thisrow,2]<-round(t1$statistic,2)
-  df1[thisrow,3]<-round(t2$statistic,2)
+    thisrow<-thisrow+1
+    mycol <- paste0(task[t],'_',mymeth[m],postbit[m])
+    w<-which(names(alltask)==mycol)
+    
+    t1<-t.test(typs[,w])
+    t2<-t.test(typs[,w],atyps[,w])
+    df1[thisrow,1]<-LImeth[m]
+    df1[thisrow,2]<-round(mean(typs[,w],na.rm=T),2)
+    df1[thisrow,3]<-round(sd(typs[,w],na.rm=T),2)
+    df1[thisrow,4]<-round(mean(atyps[,w],na.rm=T),2)
+    df1[thisrow,5]<-round(sd(atyps[,w],na.rm=T),2)
+    df1[thisrow,6]<-round(t1$statistic,2)
+    df1[thisrow,7]<-round(t2$statistic,2)
+    myci <- paste0(task[t],'_',mymeth[m],'_lowCI')
+    w<-which(names(alltask)==myci)
+    myCIdiff <-alltask[,(w+1)]-alltask[,w]
+    df1[thisrow,8]<-round(mean(myCIdiff,na.rm=T),2)
   }
-    if(m==2){
-  df2[thisrow,2]<-round(t1$statistic,2)
-  df2[thisrow,3]<-round(t2$statistic,2)
-  }
-  
+  thisrow<-thisrow+1
 }
   
+
+  
+
+
+
+kable(df1,col.names=c('Task','Mean typ','SD Typ','Mean Atyp','SD Atyp','t: Typ LI vs zero','t: Typ vs Atyp','CI range'),caption='LI vs flip method: T-values from (a) single group t-test on typically lateralised cases, and (b) comparison of typical and atypically lateralised')
+```
+
+<!--# Provisional results - table needs better formatting, and to have SE values; may be preferable to display in figure; -->
+
+Considering first the classic LI, inspection of the means indicates that, for both the strength of laterality in the typical subgroup, and for difference between typical and atypical subgroups, the LI index based on the MCA mask performs well for all tasks, except for the semantic match without baseline. The frontal mask is also effective.
+
+<!--# will be interesting to see the SE values-->
+
+```{r tableDiffData}
+kable(df2,col.names=c('Task/ROI','a','b','c'),caption='Raw difference LI: T-values from (a) single group t-test on typically lateralised cases, and (b) comparison of typical and atypically lateralised')
+
+```
+
+For the raw difference LI, the pattern of results is similar, but the t-values considerably lower.
+
+<!--# AN values need adding. The smaller t-values presumably reflect greater variance - this may look different if we do the scaling by overall mean as suggested above.  FLIP METHOD to be added in further section-->
+
+<!--# Could also be interesting to consider the proportion of individuals who show significant lateralisation - this is similar to what we did in the GAM paper; the smaller the SE, the more people will be lateralised (and fewer bilateral)-->
+
+### 2. Comparison of LIs from fMRI and fTCD
+
+<!--# For now I will create scripts to do the comparison using classic LI based on MCA, since that looks most promising. If it turns out that either the difference LI or the flip method looks better in Analysis 1, it will be relatively easy to substitute them in the analysis-->
+
+\<!\--# These functions are from COLA_RR_Results.Rmd
+
+```{r numformat,echo=F}
+numformat=function(mynum,ndecimals){
+  newnum <- format(round(mynum,ndecimals),nsmall=ndecimals)
+  return(newnum)
 }
+```
+
+```{r corformat,echo=F}
+
+corformat=function(mynum,ndecimals){
+  newnum <- format(round(mynum,ndecimals),nsmall=ndecimals)
+  neg<-''
+  if(mynum<0){
+    neg<-'-'
+    mynum<-substring(newnum,2)} #strip off minus sign - will put it back later
+  newnum<-substring(newnum,2) #strip off initial zero
+  newnum<-paste0(neg,newnum)
+  
+  return(newnum)
 }
+
+```
+
+```{r pformat, echo=F}
+#function to format p-values, without the 'p = ' bit
+pformat2=function(myp){
+  pout <- numformat(myp,3)
+  if(myp<.001){pout ='< .001'}
+  return(pout)
+}
+
+```
+
+```{r bivplotfunction2,echo=F,warning=F}
+#Function to make a bivariate plot colour coded by handedness, with spearman correlation in plot
+
+#When we call this function we have already created temporary x and y cols (tempx and tempy) to be used in this function
+bivplot2<-function(bivdat,name1,name2){
+
+#correlations for each group
+
+var1<-bivdat$tempx
+var2<-bivdat$tempy
+cor1<-spearman.ci(var1, var2, nrep = 1000, conf.level = 0.95)
+
+lab1<- paste0("r[s] == ",round(cor1$estimate,3)) #correlation with subscript (need parse=TRUE below)
+lab2 <- paste0("[",numformat(cor1$conf.int[1],3),", " ,numformat(cor1$conf.int[2],3),"]")
+
+#lab1<- paste0("L-handers: rs = ",round(cor1$estimate,2))
+#lab2<- paste0("R-handers: rs = ",round(cor2$estimate,2))   
+  xrange<-round(range(var1,na.rm=T),0)
+ yrange<-round(range(var2,na.rm=T),0)
+  if (xrange[2]<1.1) {xrange<-c(0,0)} #will be changed to -1 ,1 when plotting
+ if (yrange[2]<1.1) {yrange<-c(0,0)} #will be changed to -1 ,1 when plotting
+myplot <- ggplot(bivdat, aes(x=tempx, y=tempy, color=Rhanded)) +
+  xlab(name1)+
+   ylab(name2)+
+  xlim((xrange[1]-1),xrange[2]+1)+
+   ylim((yrange[1]-1),yrange[2]+1)+
+   geom_point(shape=1, size=1)+
+  scale_color_manual(name="Handedness",
+                       labels=c("nonRight","Right"),
+                       values=c("blue","red"))+
+  geom_hline(yintercept=0,linetype="dashed")+
+   geom_vline(xintercept=0,linetype="dashed")+
+  geom_abline(intercept = 0, slope = 1,linetype="dotted") +
+  annotate("text", x=(xrange[1]-.5), y=(yrange[2]+.75), label= lab1,size=3,parse=TRUE) +
+  annotate("text", x=(xrange[1]-.5), y=(yrange[2]+.6), label= lab2,size=2.8) +
+  theme(text = element_text(size = 8)) 
+  return(myplot)
+}
+
+```
+
+```{r makebivplots, echo=F, warning=F}
+lisadat$Rhanded <- 1
+lisadat$Rhanded[lisadat$hand_EHI_cat!='R']<-0
+lisadat$Rhanded<-as.factor(lisadat$Rhanded)
+lisadat$tempx<-lisadat$fTCD_wg_LI
+lisadat$tempy<-lisadat$fMRI_new_wg_MCA
+#lisadat$tempy<-lisadat$fMRI_diff_wg_MCA/10000 #scaled
+name1<-'WG_fTCD'
+name2<-'WG_fMRI_MCA'
+#name2<-'WG_fMRI_MCA/10000'
+myplot<-bivplot2(lisadat,name1,name2)
+
+WGplot<-myplot
+
+lisadat$tempx<-lisadat$fTCD_pptt_LI
+lisadat$tempy<-lisadat$fMRI_new_pptt_MCA
+
+name1<-'Semantic Match_fTCD'
+name2<-'Semantic Match_fMRI_MCA'
+
+myplot<-bivplot2(lisadat,name1,name2)
+
+SMplot<-myplot
+
+lisadat$tempx<-lisadat$fTCD_pptt_LI
+lisadat$tempy<-lisadat$fMRI_new_pptt_lines_MCA
+
+name1<-'Semantic Match_fTCD'
+name2<-'Semantic Match_baselined_fMRI_MCA'
+
+myplot<-bivplot2(lisadat,name1,name2)
+
+SMBplot<-myplot
+
+#Raises a question about what baselining does!
+
+lisadat$tempx<-lisadat$fMRI_new_pptt_MCA
+lisadat$tempy<-lisadat$fMRI_new_pptt_lines_MCA
+
+name1<-'Semantic Match_fMRI_MCA'
+name2<-'Semantic Match_baselined_fMRI_MCA'
+
+myplot<-bivplot2(lisadat,name1,name2)
+
+
 
 
 ```
+
+<!--# I'd like to see LIs for just the lines condition! I guess I'm wondering whether a baseline condition should be correlated with the language condition. Underlying assumption seems to be additivity - you see activation from visual processing/decision making PLUS language, and the lines allows you to subtract out the bit that you don't want. I think the data agree with that, though if the visual processing/decision bit is unlateralised, it should just make the data noisier, rather than change the laterality? So what is removed is a right-bias from the visual/decision aspect?-->
