@@ -10,6 +10,8 @@ updated after adding 95% CI for weighted LI mean
 20/5/23
 updated to read in the big LI file: li_toolbox_all_tasks_masks_LB.csv
 This has 5 and 95% CI
+31/5/23
+Modified to cope with corrected MCA data, now with binarised mask. NB the raw data files for both toolbox and diff method have been corrected.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -17,6 +19,7 @@ require(tidyverse)
 require(here)
 require(janitor) #clean up names from external files
 require(ggpubr)
+require(RVAideMemoire) #for CI for Spearman r
 ```
 
 ## Data from fMRI
@@ -48,6 +51,7 @@ allLI <- read.csv(here("Bruckert","LIComparisons","li_toolbox_all_tasks_masks_LB
 allLI <- clean_names(allLI)
 allLI$id <- substr(allLI$id,1,3) #just first 3 chars
 
+
 #find task buried in input_image
 allLI$task <- NA
 taskID <- c('wordgen_tstat1','ppt_tstat1','ppt_tstat3','ppt_tstat5','audnam_tstat5')
@@ -62,6 +66,9 @@ mask <- c('mca','frontal','temporal','parietal','cerebellar')
 allLI$mask <- NA
 for (m in 1:length(mask)){
   maskname <- paste0('LI-',mask[m],'-mask.img,1')
+  if(m==1){
+      maskname <- paste0('LI-',mask[m],'-mask.nii')
+  }
    w<-which(grepl(maskname,allLI$inclusive_mask)==TRUE)
   allLI$mask[w] <-mask[m]
 }
@@ -168,13 +175,36 @@ bigdf$pchcol <- as.factor(bigdf$pchcol)
 bigdf$lat_group <- as.factor(bigdf$lat_group)
 levels(bigdf$lat_group)<- c('Left','Bilateral','Right')
 
+#NB so far the lat_group is Lisa's original grouping
+#Here I will add a new lat_group based on whether this measures CI crossed zero
+
+bigdf$nulatgroup <- 'B'
+bigdf$nulatgroup[bigdf$lowCI<0 & bigdf$hiCI<0 ] <- 'R'
+bigdf$nulatgroup[bigdf$lowCI>0 & bigdf$hiCI>0 ] <- 'L'
+
+#We also want a new DopLatGroup specific to task, where the task has been given
+#Just two tasks: PP1 and WG1. This is just used with LvsR plots so just record this for the flip method, where
+#we have the voxel mean vols
+bigdf$Doplat<-NA
+for (tt in c('PP1','WG1')){
+  myf <- filter(bigdf,bigdf$method=='Doppler',bigdf$task==tt)
+  for (n in 1:nrow(myf)){
+    w<-intersect(which(bigdf$id==myf$id[n]), which(bigdf$task==tt))
+    bigdf$Doplat[w]<-myf$nulatgroup[n]
+  }
+  
+}
+
 ```
 
 
 Now we can look at some comparisons - start within task
 
 ```{r tryplot}
-#column with 'diff'
+tryplot <- 0
+if (tryplot==1){
+  
+
 #method options are "Doppler","flip","toolbox" - now with flipLI which is LI from flip data
 mymethod <- c('Doppler','flip','toolbox','flipLI')
 meth1 <- 1
@@ -213,8 +243,12 @@ forplot<-cbind(xfile,yfile[,w:(w+2)])
 
 correlcoef <- round(cor.test (forplot$x, forplot$y, method = "spearman",  exact = FALSE)$estimate,3)
 
+corspear <-spearman.ci(forplot$x,forplot$y, nrep = 1000, conf.level = 0.95)
+correlcoef <- paste0('r',)
+
+
 myplot <- ggplot(data = forplot,aes(x = x,y = y)) + 
-  geom_point(aes(col=lat_group),size=2)+
+  geom_point(aes(col=lat_group),size=1.5)+
   geom_errorbar(aes(ymin = ymin,ymax = ymax,col=lat_group)) + 
   geom_errorbarh(aes(xmin = xmin,xmax = xmax,col=lat_group))+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
@@ -242,12 +276,14 @@ savename<-paste0(method1,'_',method2,'_2tasks_',mymask,'.jpg')
 ggsave(here('Plots',savename),myallplot,width=8,height=4,dpi=300)
 }
 
-
+}
 
 ```
 
 
 ```{r LRplot}
+LRplot <- 1
+if(LRplot==1){
 #column with 'diff'
 masktitle <- c('MCA','Frontal','Temporal','Parietal','Cerebellar')
 tasktitle <- c('Word Generation','Semantic vs rest','Line vs rest','Semantic vs Line','Auditory Naming')
@@ -256,10 +292,12 @@ for (thismask in 1:5){
 mymask <- mask[thismask]
 allplot <- list()
 mycount <-0
-for (t in c(1,4,5)){ #WG1, PP5, AN5
+for (t in c(1,2)){ #WG1, PP5, AN5
 mycount <- mycount+1
 mytask <- task[t]
 forplot <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
+w<-which(is.na(forplot$Doplat)) #find and remove rows with no Doppler lat
+forplot <- forplot[-w,]
 names(forplot)[2:3]<-c('Left','Right')
 
 
@@ -271,24 +309,128 @@ forplot$Right[forplot$Right< (-mycensor)]<- (-mycensor)
  forplot$Left[forplot$Left>mycensor]<- mycensor
  forplot$Right[forplot$Right>mycensor]<- mycensor
 myplot <- ggplot(data = forplot,aes(x = Right,y = Left)) + 
-  geom_point(aes(col=lat_group),size=2)+
+  geom_point(aes(col=Doplat),size=2)+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
   geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
   geom_abline(intercept=0,slope=1,linetype= "dotted", col='black')+
+  geom_hline(yintercept = mean(forplot$Left),col='brown',linetype= "dashed")+
+  geom_vline(xintercept = mean(forplot$Right),col='brown',linetype= "dashed")+
   xlab("Activation R")+
   ylab("Activation L")+
    xlim(-mycensor,mycensor)+
    ylim(-mycensor,mycensor)+
   ggtitle(paste0(masktitle[thismask],":\n",tasktitle[t]))+
-  #annotate("text",x = -1.2, y = 2.5, label = paste('r = ', correlcoef),col='black')+
-  guides(col=guide_legend(title='Laterality category: fTCD WG'))
+  guides(col=guide_legend(title='Laterality category: fTCD'))
 
 
  
 allplot[[mycount]] = myplot
 }
-myallplot <- ggarrange(allplot[[1]],allplot[[3]],allplot[[2]],ncol=3,nrow=1,common.legend=TRUE)
+myallplot <- ggarrange(allplot[[1]],allplot[[2]],ncol=2,nrow=1,common.legend=TRUE)
 savename<-paste0('LR_3tasks_',mymask,'.jpg')
 ggsave(here('Plots',savename),myallplot,width=8,height=4,dpi=300)
 }
+}
 ```
+
+```{r plot5regions}
+
+#method options are "Doppler","flip","toolbox" - now with flipLI which is LI from flip data
+mymethod <- c('Doppler','flip','toolbox','flipLI')
+tlist <- c('WG1','PP1','PP5')
+longlist <- c('Word Generation', 'Semantic Match','Sem Match - Baseline')#
+for (t in 1:length(tlist)){ #new plot started with new task
+mytask <- tlist[t]
+longtask <- longlist[t]
+allplot <- list() #clear list
+mycount <-0
+meth1 <- 1
+for (meth2 in 2:3){ #methods 2 and 3 will be compared side by side
+method1 <- mymethod[meth1]
+method2 <- mymethod[meth2]
+methodlabel <- c('fTCD GAM - rescaled','fMRI: Subtracted - rescaled','fMRI: LI toolbox','LI from flip')
+
+mytaskx <- mytask
+if(mytaskx=='PP5' && meth1 ==1){mytaskx <- 'PP1'}
+
+for (thismask in 1:5){
+mymask <- mask[thismask]
+mytitle <- paste0(str_to_title(mymask),": ",longtask)
+if(thismask==1){
+  mytitle <- paste0(str_to_upper(mymask),": ",longtask)
+}
+
+mycount <- mycount+1 #used to count the plots
+
+xfile <- filter(bigdf,method==method1 & task==mytaskx & mask=='mca') #doppler only has mca equiv and only has pp1 and wg1
+yfile <-  filter(bigdf,method==method2 & task==mytask & mask==mymask)
+
+
+
+#Check that rows are equivalent
+s<-c(xfile$id,yfile$id)
+myn<-table(s)
+my2 <- names(which(myn==2))
+xfile<-xfile[xfile$id %in% my2,]
+yfile <- yfile[yfile$id %in% my2,]
+w<-which(names(xfile)=='mean')
+names(xfile)[w:(w+2)]<-c('x','xmin','xmax')
+names(yfile)[w:(w+2)]<-c('y','ymin','ymax')
+pbilat <- round(100*length(which(yfile$nulatgroup=='B'))/nrow(yfile),0) #% bilat
+forplot<-cbind(xfile,yfile[,w:(w+2)])
+
+corspear <-spearman.ci(forplot$x,forplot$y, nrep = 1000, conf.level = 0.95)
+rs <- round(corspear$estimate,3)
+ci1<-round(corspear$conf.int[1],3)
+ci2<-round(corspear$conf.int[2],3)
+cortext <- paste0('r[s] = ',rs,'\n[',ci1,', ', ci2,']')
+
+#add some text re % bilateral
+
+
+myplot <- ggplot(data = forplot,aes(x = x,y = y)) + 
+  geom_point(aes(col='black'),size=1.5)+
+  geom_errorbar(aes(ymin = ymin,ymax = ymax,col='black')) + 
+  geom_errorbarh(aes(xmin = xmin,xmax = xmax,col='black'))+
+  geom_hline(yintercept = 0, linetype="solid",col='grey') + 
+  geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
+  xlab(methodlabel[meth1])+
+  ylab(methodlabel[meth2])+
+  xlim(-1,1)+
+  ylim(-1,1)+
+  ggtitle(mytitle)+
+  annotate("text",x = -.5, y = .9, label = cortext,col='black')+
+  annotate("text",x = 0.65, y = -.85, label = paste0(pbilat,'% bilateral'),col='black')+
+  guides(col=guide_legend(title='Laterality category: fTCD WG'))
+
+allplot[[mycount]] = myplot
+}
+}
+
+myallplot <- ggarrange(allplot[[1]],allplot[[6]],allplot[[2]],allplot[[7]],allplot[[3]],
+                       allplot[[8]],allplot[[4]],allplot[[9]],allplot[[5]],allplot[[10]],nrow=5,ncol=2,common.legend=TRUE)
+savename<-paste0('Doppler_fmri2meth_5masks_',mytask,'.jpg')
+
+ggsave(here('Plots',savename),myallplot,width=8,height=15,dpi=300)
+
+#additional plots for powerpoint
+myplot1 <- ggarrange(allplot[[1]],allplot[[6]],nrow=1,ncol=2,common.legend=TRUE)
+savename<-paste0('Doppler_fmri2meth_MCA_',mytask,'.jpg')
+
+ggsave(here('Plots',savename),myplot1,width=6,height=4,dpi=300)
+
+#additional plots for powerpoint
+myplot2 <- ggarrange(allplot[[2]],allplot[[7]],allplot[[3]],allplot[[8]],nrow=2,ncol=2,common.legend=TRUE)
+savename<-paste0('Doppler_fmri2meth_fronttemp_',mytask,'.jpg')
+
+ggsave(here('Plots',savename),myplot2,width=6,height=6,dpi=300)
+
+myplot3 <- ggarrange(allplot[[4]],allplot[[9]],allplot[[5]],allplot[[10]],nrow=2,ncol=2,common.legend=TRUE)
+savename<-paste0('Doppler_fmri2meth_parcereb_',mytask,'.jpg')
+
+ggsave(here('Plots',savename),myplot3,width=6,height=6,dpi=300)
+}
+
+
+```
+
