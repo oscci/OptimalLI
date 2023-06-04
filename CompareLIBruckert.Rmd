@@ -76,7 +76,7 @@ for (m in 1:length(mask)){
 
 
 #flip files with 5% selected (can substitute another file if need be)
-flip_all <- read.csv(here("Bruckert","LIComparisons","Summaryfliptab_all_LI_1000_5.csv"))
+flip_all <- read.csv(here("Bruckert","LIComparisons","flip_allmasks_tasks_jun.csv"))
 flip_all<-clean_names(flip_all)
 w<-which(flip_all$mask=='MCA')
 flip_all$mask[w]<-'mca'
@@ -194,7 +194,7 @@ for (tt in c('PP1','WG1')){
   }
   
 }
-
+write.csv(bigdf,here('Data_processed','bigdf.csv'))
 ```
 
 
@@ -288,11 +288,13 @@ if(LRplot==1){
 masktitle <- c('MCA','Frontal','Temporal','Parietal','Cerebellar')
 tasktitle <- c('Word Generation','Semantic vs rest','Line vs rest','Semantic vs Line','Auditory Naming')
 method1 <- 'flip'
-for (thismask in 1:5){
-mymask <- mask[thismask]
-allplot <- list()
 mycount <-0
-for (t in c(1,2)){ #WG1, PP5, AN5
+allplot <- list()
+for (thismask in 2:5){
+mymask <- mask[thismask]
+
+
+for (t in c(1,2)){ #WG1, PP1, 
 mycount <- mycount+1
 mytask <- task[t]
 forplot <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
@@ -301,7 +303,7 @@ forplot <- forplot[-w,]
 names(forplot)[2:3]<-c('Left','Right')
 
 
-correlcoef <- round(cor.test (forplot$Left, forplot$Right, method = "spearman",  exact = FALSE)$estimate,3)
+#correlcoef <- round(cor.test (forplot$Left, forplot$Right, method = "spearman",  exact = FALSE)$estimate,3) #not used
 #censor values at 3
 mycensor <- 3
 forplot$Left[forplot$Left< (-mycensor)]<- (-mycensor)
@@ -309,27 +311,29 @@ forplot$Right[forplot$Right< (-mycensor)]<- (-mycensor)
  forplot$Left[forplot$Left>mycensor]<- mycensor
  forplot$Right[forplot$Right>mycensor]<- mycensor
 myplot <- ggplot(data = forplot,aes(x = Right,y = Left)) + 
-  geom_point(aes(col=Doplat),size=2)+
+  geom_point(aes(col=Doplat),size=1.5)+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
   geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
   geom_abline(intercept=0,slope=1,linetype= "dotted", col='black')+
-  geom_hline(yintercept = mean(forplot$Left),col='brown',linetype= "dashed")+
-  geom_vline(xintercept = mean(forplot$Right),col='brown',linetype= "dashed")+
+  geom_hline(yintercept = mean(forplot$Left[forplot$Doplat=='L']),col='blue',linetype= "dashed")+
+  geom_vline(xintercept = mean(forplot$Right[forplot$Doplat=='L']),col='blue',linetype= "dashed")+
   xlab("Activation R")+
   ylab("Activation L")+
    xlim(-mycensor,mycensor)+
    ylim(-mycensor,mycensor)+
   ggtitle(paste0(masktitle[thismask],":\n",tasktitle[t]))+
+  scale_color_manual(values=c( "gray40","blue","red"))+
   guides(col=guide_legend(title='Laterality category: fTCD'))
 
 
  
 allplot[[mycount]] = myplot
 }
-myallplot <- ggarrange(allplot[[1]],allplot[[2]],ncol=2,nrow=1,common.legend=TRUE)
-savename<-paste0('LR_3tasks_',mymask,'.jpg')
-ggsave(here('Plots',savename),myallplot,width=8,height=4,dpi=300)
 }
+myallplot <- ggarrange(allplot[[1]],allplot[[2]],allplot[[3]],allplot[[4]],allplot[[5]],allplot[[6]],allplot[[7]],allplot[[8]],ncol=2,nrow=4,common.legend=TRUE)
+savename<-paste0('LR_3tasks_4mask.eps')
+ggsave(here('Plots',savename),myallplot,width=6,height=10,dpi=300)
+
 }
 ```
 

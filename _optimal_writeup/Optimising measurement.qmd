@@ -1,7 +1,7 @@
 ---
-title: "Individual differences in language lateralisation: an exploratory study comparing functional transcranial Doppler ultrasound and fMRI"
+title: "Measuring language lateralisation using fMRI: an exploratory study comparing fMRI and functional transcranial Doppler ultrasound"
 bibliography: fliprefs.bib
-format: html
+format: docx
 editor: visual
 ---
 
@@ -11,11 +11,18 @@ editor: visual
 
 <!-- #I'd like to submit this to either Neurobiology of Language, or Open Research Europe, which is like Wellcome Open Research, but for work funded by ERC -->
 
-```{r packages,echo=F,warning=F}
+```{r packages,echo=F,warning=F,message=F,`code-line-numbers` = "1"}
 require(here)
 require(tidyverse)
+require(RVAideMemoire) #for spearman ci
+require(ggpubr) #for ggarrange
+require(janitor) #for cleaning up variables
 
 ```
+
+## Abstract
+
+In this exploratory study we compare and contrast two methods for deriving a laterality index from functional magnetic resonance imaging (fMRI) data: the standard weighted mean from the widely-used Laterality Toolbox (toolbox method), and a novel method that used subtraction of activations from homologous regions in left and right hemisphere to give an array of difference scores (subtraction method). Data came from 32 individuals who had been selected to include a high proportion of people with atypical laterality when tested with functional transcranial Doppler ultrasond (fTCD), and who had fMRI data for two tasks - Word Generation and Semantic Matching - that were selected as likely to activate different brain regions. In general, the subtraction method gave better agreement with fTCD laterality indices than the toolbox method, both for individual regions of interest, and for a large region corresponding to the middle cerebral artery. Importantly, LI estimates from this method had markedly smaller confidence intervals than those from the toolbox method, with most participants being reliably lateralised to left or right. Reasons for discrepancies between fMRI methods are discussed: one issue is that results from the toolbox method depend on the range of thresholds considered. Furthermore, examination of raw data from the two hemispheres shows that lateralisation is evident in regions characterised by deactivation, and so key information may be lost by ignoring voxel activations below zero, as is done with the toolbox method.
 
 ## Introduction
 
@@ -23,13 +30,15 @@ It has been established for many years that language processing depends on speci
 
 Atypical lateralisation is of considerable theoretical interest to neuroscientists interested in the evolutionary origins and functional significance of laterality. In addition, it is relevant for understanding how individuals recover from unilateral brain injury and for planning epilepsy surgery. We need reliable and convenient methods for measuring functional lateralisation in individuals to further research in this area.
 
-Functional transcranial Doppler ultrasound (fTCD) is an inexpensive and portable method for measuring lateralisation by comparing blood flow velocity in the left and right middle cerebral arteries (MCAs) during an activation task, relative to a resting baseline period. It is relatively insensitive to movement artefacts, and can be used with children aged 4 years and over [@bishop2014]. In a recent study, @parker2022 compared lateralisation indices (LIs) for six different language tasks in left- and right-handers. This study found that left-lateralisation characterised tasks involving language generation, but not those involving comprehension, and that lateralisation was generally weaker in left-handers. Split-half reliabilities were generally reasonable for all tasks (.7 or more). FTCD has excellent temporal resolution but its spatial resolution is limited to distinguishing left from right, as it simply measures blood flow in the MCAs. If we find a lack of lateralisation on a task, we cannot know whether the two hemispheres contribute equally, or whether there is left-biased activation in some regions, and right-biased activation in others. To answer questions about localisation, we need to turn to a different method, functional magnetic resonance imaging (fMRI). FMRI has complementary advantages and disadvantages to fTCD: it has very poor temporal resolution but good spatial resolution, and can measure changes in blood oxygenation in voxels as small as 1 mm^3^. By comparing LIs obtained with fTCD and fMRI on comparable tasks, we can gain some insights into the sensitivity of fTCD to regional changes in blood flow. However, comparison is complicated by measurement issues.
-
 A recent study by @vingerhoets2023 used the Delphi approach [@hasson2000] to explore expert opinion on measurement of lateralisation using a range of techniques, including fTCD and fMRI. It concluded that there was still no agreement about the optimal way to measure lateralisation, and the key concept of bilateral language was ill-defined.
+
+### Functional transcranial Doppler ultrasound (fTCD)
+
+FTCD is an inexpensive and portable method for measuring lateralisation by comparing blood flow velocity in the left and right middle cerebral arteries (MCAs) during an activation task, relative to a resting baseline period. It is relatively insensitive to movement artefacts, and can be used with children aged 4 years and over [@bishop2014]. In a recent study, @parker2022 compared lateralisation indices (LIs) for six different language tasks in left- and right-handers. These researchers found that left-lateralisation characterised tasks involving language generation, but not those involving comprehension, and that lateralisation was generally weaker in left-handers. Split-half reliabilities were generally reasonable for all tasks (.7 or more). FTCD has excellent temporal resolution but its spatial resolution is limited to distinguishing left from right, as it simply measures blood flow in the MCAs. If we find a lack of lateralisation on a task, we cannot know whether the two hemispheres contribute equally, or whether there is left-biased activation in some regions, and right-biased activation in others.
 
 With fTCD, signals from left and right sides are normalised by dividing by the mean of that side, and each trial is baseline corrected by subtracting the mean value from a rest period prior to stimulation. When fTCD was first developed as a tool for investigating laterality, the LI was obtained by identifying a temporal window, or Period of Interest (POI), and taking the mean value in an interval defined as +/- 2 s around the absolute peak difference between left and right signals in the POI [@deppe1997]. This method had the disadvantage that it could give a biased LI estimate in individuals who had little difference between the two sides: if the peak difference changed from left to right in the course of the POI, then the larger peak would be used. This could create a spurious bimodality in the distribution of LIs in a sample. As an alternative, @woodhead2020 proposed using a simple subtraction method whereby the mean signal in the right MCA was subtracted from that on the left. The two methods were highly correlated, but the latter method gave a normal distribution of LIs in a sample. More recently, @thompson2022 proposed a method more analogous to that used in fMRI, where Generalised Models were used to estimate the interaction of side (left vs right) with time interval (POI vs non-POI) on the signal over a series of trials. This gave LIs that agreed well with the simpler subtraction method, but with a smaller error of measurement. For the current paper, we use the Generalised Additive Model described by @thompson2022 to estimate LIs from fTCD data. This gives a estimate of LI corresponding to a percentage difference in blood flow between left and right that is specific to the POI.
 
-```{r demoDoppler,echo=F}
+```{r demoDoppler,echo=F,warning=F,message=F}
 demodat <- read.csv(here('_optimal_writeup','demoDop_RH_WG.csv'))
 w<-which(demodat$Condition=='L-R')
 demodat$Condition[w] <- '(L-R)+100'
@@ -60,13 +69,17 @@ ggsave(here('_optimal_writeup','images','Doppler_demo.eps'),plot=p,width=5.5,hei
 
 ```
 
-The optimal method for estimating laterality has been much debated in the field of fMRI [@bradshaw2017]. A computed laterality index (LI) is expected to depend on the task, and the region-of-interest (ROI), but it will also vary depending on the analytic approach. The starting point is a t-map derived in the usual way from the General Linear Model, which is used to contrast the condition of interest with a comparison condition, which may be either rest or another condition that differs on key task demands. The next step is to identify voxels from the t-map within the ROI that are above some activation threshold, thr, and compute the LI by the standard formula (L+R)/(L-R) where L and R are either the number of voxels, or the mean activation of voxels on L and R sides. In practice, it makes little difference whether number or mean activation is used in the formula. However, the choice of threshold, thr, can make a substantial difference to the LI. Various attempts have been made to tackle this aspect, and the bootstrapping method developed by @wilke2006 and @wilke2007 and implemented in the LI Toolbox has become widely accepted as a standard [@bradshaw2017], [@vingerhoets2023]. In this method, LIs are computed from numerous subsamples of data for a range of thresholds, ranging from zero to a maximum value determined by the maximum observed activation. A mean LI is then computed from all the estimated LI values, weighted by the size of the threshold, so giving more weight to LIs based on stronger activations. Although this bootstrap method is described as 'threshold free', it does exclude voxels with negative t-scores.
+FTCD has excellent temporal resolution, but can only tell us about left-right differences, not where activations are occurring within a hemisphere. To answer questions about localisation, we need to turn to FMRI, which has complementary advantages and disadvantages to fTCD: it has very poor temporal resolution but good spatial resolution, and can measure changes in blood oxygenation in voxels as small as 1 mm^3^. By comparing LIs obtained with fTCD and fMRI on comparable tasks, we can gain some insights into the sensitivity of fTCD to regional changes in blood flow. However, comparison is complicated by measurement issues.
+
+### Functional Magnetic Resonance Imaging (fMRI)
+
+The optimal method for estimating laterality has been much debated in the field of fMRI [@bradshaw2017]. A computed laterality index (LI) is expected to depend on the task, and the region-of-interest (ROI), but it will also vary depending on the analytic approach. The starting point is a t-map derived in the usual way from the General Linear Model, which is used to contrast the condition of interest with a comparison condition, which may be either rest or another condition that differs on key task demands. The next step is to identify voxels from the t-map within the ROI that are above some activation threshold, and compute the LI by the standard formula (L+R)/(L-R) where L and R are either the number of voxels, or the mean activation of voxels on L and R sides. In practice, it makes little difference whether number or mean activation is used in the formula. However, the choice of threshold can make a substantial difference to the LI. Various attempts have been made to tackle this aspect, and the bootstrapping method developed by @wilke2006 and @wilke2007 and implemented in the LI Toolbox has become widely accepted as a standard [@bradshaw2017], [@vingerhoets2023]. In this method, LIs are computed from subsamples of data for a range of thresholds, ranging from zero to a maximum value determined by the maximum observed activation. A mean LI is then computed from all the estimated LI values, weighted by the size of the threshold, so giving more weight to LIs based on stronger activations. Although this bootstrap method is described as 'threshold free', as discussed below, it does exclude voxels with negative t-scores, and results will depend on the range of thresholds considered.
 
 [@thompson2022] compared estimates of LI from different analytic methods for 31 participants studied by @bruckert2016, who had completed a Word Generation task with both fTCD and fMRI. The bootstrapped LI was computed after applying a mask combining frontal, temporal and parietal lobes, as an approximation of the MCA territory. For the standard bootstrapped fMRI LI, the correlation with fTCD LI was .669, rising to .712 when the denonimator of the LI formula was removed, and LI computed just as the difference between two sides (L-R). This latter approach was explored to give an unbounded measure of LI, similar to that obtained with fTCD. (The standard LI formula is bounded by -1 and +1, giving a skewed distribution).
 
-The main focus of the @thompson2002 study was on developing the GAM approach to analysing fTCD data. Here we turn to consider in more detail how fTCD LI related to fMRI LI, using the same dataset from @bruckert2016. We consider two different tasks, Word Generation and Semantic Matching, and four additional ROIs, frontal, temporal, parietal and cerebellar. We contrast here the bootstrap LI for fMRI with an alternative approach to fMRI laterality analysis, the subtraction method <!--# I think it might be better not to call it flip since that seems to be used in different ways by different people -->, which was designed to be more comparable to the fTCD approach. This is described in more detail below, but essentially is a threshold-free method that involves subtracting R from L voxel t-map activations from homologous regions in a sparse sample of voxels from the ROI. This process is repeated to give a distribution of LI values from which a mean and 95% confidence interval can be obtained.
+The main focus of the @thompson2022 study was on developing the GAM approach to analysing fTCD data. Here we turn to consider in more detail how fTCD LI related to fMRI LI, using the same dataset from @bruckert2016. We consider two different tasks, Word Generation and Semantic Matching, and four additional ROIs, frontal, temporal, parietal and cerebellar. We contrast here the toolbox (bootstrap) LI for fMRI with an alternative approach to fMRI laterality analysis, the subtraction method <!--# I think it might be better not to call it flip since that seems to be used in different ways by different people -->, which was designed to be more comparable to the fTCD approach. This is described in more detail below, but essentially is a threshold-free method that involves subtracting R from L voxel t-map activations from homologous regions in a sparse sample of voxels from the ROI. This process is repeated to give a distribution of LI values from which a mean and 95% confidence interval can be obtained.
 
-This is an exploratory study where the principal focus is on discovering which fMRI measurement method and ROI agrees best with fTCD LI. In addition, we consider the confidence interval around the LI estimates for different methods.
+This is an exploratory study where the principal focus wason discovering which fMRI measurement method and ROI agrees best with fTCD LI. In addition, we consider the confidence interval around the LI estimates for different methods.
 
 ## Methods
 
@@ -74,9 +87,9 @@ This is an exploratory study where the principal focus is on discovering which f
 
 A within-subjects design was used where participants were tested in two sessions: the first using fTCD, and the second using fMRI. On average, the interval between the two sessions was 11.8 days (range: 1 to 31 days).
 
-In both sessions participants performed two tasks: a speech production task (word generation) and a semantic matching task based on the Pyramids and Palm Trees test [@howard1992]. The tasks were designed to be as similar as possible in the two modalities (fTCD and fMRI), but some minor differences were required as noted below. Hence, the main within-subject independent variables were method (fTCD versus fMRI) and task (word generation versus semantic decision) and the dependent variable was laterality index (LI). For the semantic matching task, we included a comparison ("baseline") line judgement task, and we present LIs both from semantic matching vs rest, and semantic matching vs line judgement. <!--# not sure if necessary - currently just sem vs control shown -->
+In both sessions participants performed two tasks: a speech production task (word generation) and a semantic matching task based on the Pyramids and Palm Trees test [@howard1992]. The tasks were designed to be as similar as possible in the two modalities (fTCD and fMRI), but some minor differences were required as noted below. Hence, the main within-subject independent variables were method (fTCD versus fMRI) and task (word generation versus semantic decision) and the dependent variable was laterality index (LI). For the semantic matching task, we included a comparison ("baseline") line judgement task, but here we present LIs just from semantic matching vs rest, as this is comparable to the procedure used with fTCD.
 
-For comparison of different methods of fMRI analysis, we also considered data from an auditory naming task that was not used with fTCD. The data were acquired as part of a larger study involving the two testing sessions reported here and a later follow-up session which involved administration of a neuropsychological battery and a visual half-field task; for details see @bruckert2016.
+For comparison of different methods of fMRI analysis, we also considered data from an auditory naming task that was not used with fTCD. The data were acquired as part of a larger study involving the two testing sessions reported here and a later follow-up session which involved administration of a neuropsychological battery and a visual half-field task; for details see @bruckert2016. <!--# Not sure whether to include this -->
 
 ### **Participants**
 
@@ -116,7 +129,9 @@ The fTCD probes recorded the cerebral blood flow volume (CBFV) from left and rig
 
 ### ***LI Calculation***
 
-For LI calculation we departed from the method used by Bruckert (2016) and adopted the Generalised Additive Model approach described by @thompson2022, which is more comparable to the Generalised Linear Model method used with fMRI. Note that, as shown by Thompson et al (2022), the individual LI values obtained with this method are closely comparable to those obtained by subtracting averaged left and right cerebral blood flow velocities; however, the LI estimates have smaller standard errors than those from more traditional methods.
+For LI calculation we departed from the method used by Bruckert (2016) and adopted the Generalised Additive Model (GAM) approach described by @thompson2022, which is more comparable to the Generalised Linear Model method used with fMRI. Note that, as shown by Thompson et al (2022), the individual LI values obtained with this method are closely comparable to those obtained by subtracting averaged left and right cerebral blood flow velocities; however, the LI estimates have smaller standard errors than those from more traditional methods.
+
+The new LIs from the GAM method were used to recategorise individuals as left-lateralised, right-lateralised, or bilateral on each of the two language tasks, depending on whether the confidence interval around the LI estimate was above zero (left), below zero (right), or spanned zero (bilateral).
 
 ### ***Data Quality***
 
@@ -146,19 +161,19 @@ The run comprised six blocks of semantic matching, six blocks of line decision a
 
 #### ***Auditory Naming***
 
-The auditory naming paradigm (AN) was based on the Auditory Responsive Naming task [@bookheimer1998] and identical to the one used by @badcock2012a, who adapted this task for the use in FMRI. Participants heard short definitions of a high frequency nouns through MRI compatible in-ear headphones (model S14, Sensimetrics), and were required to silently generate the described word (e.g. the participant heard 'shines in the sky' and thinks of 'sun'). Because this task used an auditory presentation, which creates substantial activation in auditory cortex, a reversed speech condition (same recordings played backwards) was included, so the effect of auditory stimulation could be controlled for.
+The auditory naming paradigm (AN) was based on the Auditory Responsive Naming task [@bookheimer1998] and identical to the one used by @badcock2012a, who adapted this task for the use in FMRI. Participants heard short definitions of a high frequency nouns through MRI compatible in-ear headphones (model S14, Sensimetrics), and were required to silently generate the described word (e.g. the participant heard 'shines in the sky' and thinks of 'sun'). Because this task used an auditory presentation, which creates substantial activation in auditory cortex, a reversed speech condition (same recordings played backwards) was included, so the effect of auditory stimulation could be controlled for. <!--# I haven't included analysis of this in the write-up, but do have this task analysed -->
 
 ***Data Acquisition***
 
 Scanning was performed in a Siemens 3T Trio scanner with a 32-channel head coil. The task stimuli were presented using Presentation Software (Neurobehavioural Systems) with stimulus onset synchronised with the scanner. The stimuli were projected via a mirror mounted on the head coil.
 
-A high resolution T1-weighted MPRAGE was acquired for image registration (TR=2040 ms, TE=4.7 ms, flip angle=8°, 192 transverse slices, 1 mm isotropic voxels). Echo-planar images were acquired to measure change in blood oxygen levels during the behavioural tasks (TR=3s, TE=30 ms, flip angle=90°, 48 axial slices, slice thickness=3 mm, in-plane resolution=3 x 3 mm). \<query in Zoe original 'field maps? \>
+A high resolution T1-weighted MPRAGE was acquired for image registration (TR=2040 ms, TE=4.7 ms, flip angle=8°, 192 transverse slices, 1 mm isotropic voxels). Echo-planar images were acquired to measure change in blood oxygen levels during the behavioural tasks (TR=3s, TE=30 ms, flip angle=90°, 48 axial slices, slice thickness=3 mm, in-plane resolution=3 x 3 mm). <!--# query in Zoe original 'field maps?  -->
 
 #### ***Data Analysis***
 
 Data analysis was conducted using FEAT (the fMRI Expert Analysis Tool) in FSL (FMRIB Software Library, <http://www.fmrib.ox.ac.uk/fsl>). The preprocessing stages included head motion correction through realignment to the middle volume of the EPI dataset; skull stripping using FSL's Brain Extraction Tool (BET; [@smith2002]; spatial smoothing using a 6 mm full-width-half-maximum Gaussian kernel; high-pass temporal filtering at 90 seconds; and unwarping using fieldmaps in FSL's Phase Region Expanding Labeller for Unwrapping Discrete Estimates tool (PRELUDE) and FMRIB's Utility for Geometrically Unwarping EPI (FUGUE; @jenkinson2003).
 
-The preprocessed data were entered into first-level (subject-specific) general linear models (GLMs). The word generation and semantic matching runs were analysed separately. The explanatory variables (EVs) in the GLM were: the timecourse of the active tasks (word generation, or semantic matching and line decision) convolved with a double-gamma function; the temporal derivatives of the timecourse EV; and six motion correction parameters as covariates of no interest. For word generation, the contrast of interest was word generation versus the implicit (resting) baseline. For semantic matching, two contrasts were extracted: semantic matching versus rest, and semantic matching versus line decision. For auditory naming, one contrast was used, i.e., auditory naming vs reversed speech.
+The preprocessed data were entered into first-level (subject-specific) general linear models (GLMs). The word generation and semantic matching runs were analysed separately. The explanatory variables (EVs) in the GLM were: the timecourse of the active tasks (word generation, or semantic matching and line decision) convolved with a double-gamma function; the temporal derivatives of the timecourse EV; and six motion correction parameters as covariates of no interest. For word generation, the contrast of interest was word generation versus the implicit (resting) baseline. For semantic matching, two contrasts were extracted: semantic matching versus rest, and semantic matching versus line decision. For auditory naming, one contrast was used, i.e., auditory naming vs reversed speech. <!--# Again, I have data from the Sem Matching with subtraction, and from Aud Naming - I decided it might just be too much to include these as well but could do so -->
 
 <!--# need to have more detail here on FLIRT - can put processing scripts on OSF-->
 
@@ -168,7 +183,7 @@ The following methods for calculating LI~fMRI~ were compared:
 
 1.  Conventional threshold-independent LI
 
-    The t-statistic maps <!--# I have redone all analyses with t-maps --> were used to calculate LI values using the conventional formula LI = (L-R) / (L+R). The bootstrapping method in the LI Toolbox [@wilke2006; @wilke2007] was used to give a threshold-independent LI for each task and ROI. This method (described in @bradshaw2017; @wilke2007 ) takes an iterative approach, first by varying the t-threshold applied to the ROI data in 20 equally-spaced thresholds from 0 to the maximum t-value in the image. At each threshold, the bootstrapping procedure takes 100 different re-samples of the t-statistics within the thresholded ROI, where the size of the re-sample is 25% of all voxels by default. An LI value is calculated for every combination of these re-samples (100\*100=10,000 LI values) at each threshold level (20 thresholds x 10,000=200,000 LI values). These are plotted in a histogram and weighted by t-threshold. A trimmed mean of all of the weighted LI values is taken, to give a final LI value that is threshold-independent.
+    The t-statistic maps <!--# I have redone all analyses with t-maps --> were used to calculate LI values using the conventional formula LI = (L-R) / (L+R). The bootstrapping method in the LI Toolbox [@wilke2006; @wilke2007] was used to give a LI for each task and ROI. This method (described in @bradshaw2017; @wilke2007 ) takes an iterative approach, first by varying the t-threshold applied to the ROI data in 20 equally-spaced thresholds from 0 to the maximum t-value in the image. At each threshold, the bootstrapping procedure takes 100 different re-samples of the t-statistics within the thresholded ROI, where the size of the re-sample is 25% of all voxels by default. An LI value is calculated for every combination of these re-samples (100\*100=10,000 LI values) at each threshold level (20 thresholds x 10,000=200,000 LI values). These are plotted in a histogram. Alternative options are available for computing the LI: A trimmed mean of all of the LI values is taken, or a weighted mean that weights the mean from each threshold by the threshold. Here we used the weighted mean, which we refer to as the toolbox LI.
 
     The LI Toolbox software does not provide a confidence interval for the weighted mean. We computed one by creating a new histogram of LIs, taking a proportion of LIs, weighted by threshold, as illustrated in Table x. The mean of these values agrees with the weighted mean computed by the LI toolbox. The 5th and 95th centiles were determined empirically for each histogram to give a 95% confidence interval. <!--# I've just realised that this will actually give a 90% CI?  Need to check. It is already so big I don't want to make it any bigger! -->
 
@@ -176,7 +191,7 @@ The following methods for calculating LI~fMRI~ were compared:
 
     We explored a version of the flip method, which was used by @watkins2001 to assess structural asymmetries in human MRI. In this method, rather than assessing how many voxels are activated in left and right hemispheres, the right-brain image is flipped and then subtracted from the left-brain image.
 
-    The flip method has occasionally been applied to functional MRI (@baciu2005; @cousin2007) but there is little consensus on how to derive an individual LI from this approach. We term our method the Subtraction Method to avoid confusion with other approaches. To minimise spatial dependencies between voxels, we took 1000 samples, each containing a random 5% of voxels in the region, and then computed the difference score at each voxel. The mean, 5th and 95th percentiles were taken from the 1000 estimates to give a confidence interval around the difference score. Note that this method is threshold-independent, with all t-map values being included, regardless of whether positive or negative.
+    The flip method has occasionally been applied to functional MRI (@baciu2005; @cousin2007) but there is little consensus on how to derive an individual LI from this approach. We term our method the Subtraction Method to avoid confusion with other approaches. To minimise spatial dependencies between voxels, we took 1000 samples, each containing a random 5% of voxels in the region of interest, and then computed the difference score at each voxel. The mean, 5th and 95th percentiles were taken from the 1000 estimates to give a confidence interval around the difference score. Note that this method is threshold-independent, with all t-map values being included, regardless of whether positive or negative.
 
     To make it easier to visualise the subtraction method data on the same scale as the LI toolbox data, the differences were divided by the absolute maximum difference in the sample, 2.7, so that the scale maximum was 1.0. Note, however, that these values are not conventional laterality indices, as they are simple differences, rather than proportions. We refer to these as scaled subtraction LI.
 
@@ -192,32 +207,32 @@ In all analyses a region 5 mm either side of the midline was excluded from consi
 
 ## **Data Analysis**
 
-Comparison of LI estimates from fCTD with bootstrap and subtraction methods.
+### Comparison of LI estimates from fCTD with toolbox and subtraction methods.
 
-The first set of analyses involved comparing the LIs from fTCD with those from fMRI for each combination of task (Word Generation and Semantic Matching) x LI method (Bootstrap and Subtraction) for the MCA mask.
+The first set of analyses involved comparing the LIs from fTCD with those from fMRI for each combination of task (Word Generation and Semantic Matching) x LI method (toolbox and subtraction) for the MCA mask.
 
 A second set of analyses was conducted to look at the agreement between LI estimates from fMRI obtained using different ROIs and those from fTCD for the two tasks.
 
-The similarity between LI~fMRI~ and LI~fTCD~ was assessed using scattergraphs and bivariate correlations. As we anticipate that the LI values may not fit a normal distribution, we will use Spearman's rank correlations instead of Pearson's correlations. It should be noted that there is no well-established method for testing the significance of a difference between non-parametric correlations (Howell, 2010; Wilcox & Tian, 2008); however, the analyses presented here are exploratory, with the aim of better understanding the similarities and differences between laterality measured in fMRI and fTCD -- therefore, statistical significance is not the key concern. Instead, bootstrapping will be used to calculate the 95% confidence intervals around the Spearman's correlations.
+The similarity between LI~fMRI~ and LI~fTCD~ was assessed using scattergraphs and bivariate correlations. As we anticipate that the LI values may not fit a normal distribution, we will use Spearman's rank correlations instead of Pearson's correlations. Bootstrapping was used to calculate the 95% confidence intervals around the Spearman's correlations.
 
 ## Results
 
-### 1. Correspondence of LI in the MCA from fTCD and fMRI, according to task and fMRI-LI method 
+### 1. Correspondence of LI in the MCA from fTCD and fMRI, according to task and fMRI-LI method
 
-```{r packages, echo=F, warnings=F}
-require(here)
-require(tidyverse)
-require(RVAideMemoire) #for spearman ci
+```         
 ```
 
-```{r plotMCA}
+```{r plotMCA, echo=F, warning=F}
 bigdf<-read.csv(here('Data_processed','bigdf.csv'))
+if(names(bigdf)[1]=="X"){
+  bigdf<-bigdf[,-1]
+}
 
 ```
 
-\<!\--# These functions are from COLA_RR_Results.Rmd
+<!--# # These functions are from COLA_RR_Results.Rmd -->
 
-```{r numformat,echo=F}
+```{r numformat,echo=F,warning=F}
 numformat=function(mynum,ndecimals){
   newnum <- format(round(mynum,ndecimals),nsmall=ndecimals)
   return(newnum)
@@ -250,8 +265,8 @@ pformat2=function(myp){
 
 ```
 
-```{r makescatterplots}
-#We use same chunk to make scatterplot for MCA as well as for the ROIs
+```{r makescatterplots,echo=F,warning=F}
+#We use this chunk to make scatterplot for MCA as well as for the ROIs
 #method options are "Doppler","flip","toolbox" - now with flipLI which is LI from flip data
 mask <- c("mca" , "frontal" ,"temporal" ,"parietal" , "cerebellar")
 mymethod <- c('Doppler','flip','toolbox','flipLI')
@@ -374,53 +389,79 @@ allplot[[mycount]] = myplot
 }
   
 #plots for paper
+filetype='.jpg' #works with .eps also
 myplot1 <- ggarrange(allplot[[1]],allplot[[6]],allplot[[11]],allplot[[16]],nrow=2,ncol=2,common.legend=TRUE)
-savename<-paste0('Doppler_fmri2meth_MCA_2task','.eps')
+savename<-paste0('Doppler_fmri2meth_MCA_2task',filetype)
 
 ggsave(here('Plots',savename),myplot1,width=6,height=6,dpi=300)
 
 #additional plots for powerpoint
 myplot2 <- ggarrange(allplot[[2]],allplot[[7]],allplot[[3]],allplot[[8]],nrow=2,ncol=2,common.legend=TRUE)
-savename<-paste0('Doppler_fmri2meth_fronttemp_',mytask,'.eps')
+savename<-paste0('Doppler_fmri2meth_fronttemp_',mytask,filetype)
 
 ggsave(here('Plots',savename),myplot2,width=6,height=6,dpi=300)
 
 myplot3 <- ggarrange(allplot[[4]],allplot[[9]],allplot[[5]],allplot[[10]],nrow=2,ncol=2,common.legend=TRUE)
-savename<-paste0('Doppler_fmri2meth_parcereb_',mytask,'.eps')
+savename<-paste0('Doppler_fmri2meth_parcereb_',mytask,filetype)
 
 ggsave(here('Plots',savename),myplot3,width=6,height=6,dpi=300)
 
 myplot4 <- ggarrange(allplot[[2]],allplot[[7]],allplot[[3]],allplot[[8]],allplot[[4]],allplot[[9]],allplot[[5]],allplot[[10]],nrow=4,ncol=2,common.legend=TRUE)
-savename<-paste0('Doppler_fmri2meth_4ROI_WG1.eps')
+savename<-paste0('Doppler_fmri2meth_4ROI_WG1',filetype)
 
 ggsave(here('Plots',savename),myplot4,width=5,height=10,dpi=300)
 
 
 myplot5 <- ggarrange(allplot[[12]],allplot[[17]],allplot[[13]],allplot[[18]],allplot[[14]],allplot[[19]],allplot[[15]],allplot[[20]],nrow=4,ncol=2,common.legend=TRUE)
-savename<-paste0('Doppler_fmri2meth_4ROI_PP1.eps')
+savename<-paste0('Doppler_fmri2meth_4ROI_PP1',filetype)
 
 ggsave(here('Plots',savename),myplot5,width=5,height=10,dpi=300)
 
+  #for mca we also compute correlation between the two fMRI Methods, which will be reported in text - 
+mywg <- filter(bigdf,mask=='mca',method %in% c('flip','toolbox'),task%in% c('WG1'))
+mysm <- filter(bigdf,mask=='mca',method %in% c('flip','toolbox'),task%in% c('PP1'))
+#make a little df with all aligned - v clunky but easy to check
+speardf <- data.frame(matrix(NA,nrow=(nrow(mywg)/2),ncol=5))
+names(speardf)<-c('id','flip_WG','boot_WG','flip_SM','boot_SM')
+for (i in 1:(nrow(mywg)/2)){
+  thisid <- mywg$id[i]
+  speardf$id[i]<-thisid
+  temp <- filter(mywg,id==thisid,method=='flip')
+  speardf$flip_WG[i]<-temp$mean
+  temp <- filter(mywg,id==thisid,method=='toolbox')
+  speardf$boot_WG[i]<-temp$mean
+  #find this sub in the sm file - need to allow for one missing case
+  temp <- filter(mysm,id==thisid)
+  if(nrow(temp)>0) {
+     temp1 <- filter(mysm,id==thisid,method=='flip')
+     speardf$flip_SM[i]<-temp1$mean
+     temp1 <- filter(mysm,id==thisid,method=='toolbox')
+     speardf$boot_SM[i]<-temp1$mean
+  }
+}
 
-
+     corWG <- spearman.ci(speardf$flip_WG,speardf$boot_WG, nrep = 1000, conf.level = 0.95)
+     corSM <- spearman.ci(speardf$flip_SM,speardf$boot_SM, nrep = 1000, conf.level = 0.95)
+  
 
 
 ```
 
-![Scatterplots of relationship between fTCD and two methods of fMRI laterality](images/Doppler_fmri2meth_MCA_2task.eps)
+![Scatterplots of relationship between fTCD and two methods of fMRI laterality](images/Doppler_fmri2meth_MCA_2task.jpg)
 
-Figure x shows the relationship between fTCD laterality (x-axis) and fMRI laterality (y-axis) for the original LI toolbox bootstrap method in the left panels and the new subtraction method in the right panels. The upper panels show results for Word Generation, and the lower panels for Semantic Matching. Points are colour-coded according to categorical laterality classification on fTCD for that task: grey points are those where the 95% confidence interval crosses zero, and are hence coded bilateral. Points in red are right-lateralised, and those in blue are left-lateralised. Note that the high proportion of bilateral/right-lateralised cases reflects the fact that the sample was selected to include a high proportion of atypically lateralised individuals. The plot also shows the Spearman correlation between fTCD and fMRI laterality, with the 95% confidence interval, obtained from bootstrap method in package RVAidememoire [@herve2021]. The percentage of individuals identified as having bilateral language on fMRI is also shown, again using the criterion of whether the 95% confidence interval of the estimate crosses zero.
+Figure x shows the relationship between fTCD laterality (x-axis) and fMRI laterality (y-axis) for the original LI toolbox bootstrap method in the left panels and the new subtraction method in the right panels. The upper panels show results for Word Generation, and the lower panels for Semantic Matching. Points are colour-coded according to categorical laterality classification on fTCD for that task: grey points are those where the 95% confidence interval crosses zero, and are hence coded bilateral. Points in red are right-lateralised, and those in blue are left-lateralised. Note that the high proportion of bilateral/right-lateralised cases reflects the fact that the sample was selected to include a high proportion of atypically lateralised individuals. The plot also shows the Spearman correlation between fTCD and fMRI laterality, with the 95% confidence interval, obtained using the bootstrap method in package RVAidememoire [@herve2021]. The percentage of individuals identified as having bilateral language on fMRI is also shown, again using the criterion of whether the 95% confidence interval of the estimate crosses zero. Not shown in the plots is the correlation between laterality estimates from the two fMRI methods: the Spearman correlation between subtraction and bootstrap methods was `r round(corWG$estimate,3)`, 95% confidence interval \[`r round(corWG$conf.int[1],3)`, `r round(corWG$conf.int[2],3)`\] for Word Generation and `r round(corSM$estimate,3)`\`95% confidence interval \[`r round(corSM$conf.int[1],3)`, `r round(corSM$conf.int[2],3)`\] for Semantic Matching.
 
-Two points are immediately evident from the plots. First, with few exceptions, fMRI and fTCD categorisations agree fairly well, i.e., those categorised as right-lateralised on fTCD tend to have LI values below zero on fMRI, and those categorised as left-lateralised on fTCD tend to have LI values above zero on fMRI. Second, the 95% confidence intervals are considerably larger for the bootstrapped LI toolbox estimates than for the subtraction method: this has the consequence that a far higher proportion of toolbox estimates categorise the individual as having bilateral language.
+Two points are immediately evident from the plots. First, with few exceptions, fMRI and fTCD categorisations agree fairly well, i.e., those categorised as right-lateralised on fTCD tend to have LI values below zero on fMRI, and those categorised as left-lateralised on fTCD tend to have LI values above zero on fMRI. Second, the 95% confidence intervals for individual LI estimates are considerably larger for the bootstrapped LI toolbox estimates than for the subtraction method: this has the consequence that a far higher proportion of toolbox estimates categorise the individual as having bilateral language.
 
 We will discuss the implications of these results below, but first we turn to look at agreement for the four ROIs outlined above. Before plotting the results for the laterality indices, we look at the mean voxel activations on left and right for each region.
 
 ### 2. Left vs right activations on fMRI by task and region
 
-```{r LRplots}
+```{r LRplots,echo=F,warning=F}
 LRplot <- 1
 if(LRplot==1){
-#column with 'diff'
+
+  
 masktitle <- c('MCA','Frontal','Temporal','Parietal','Cerebellar')
 tasktitle <- c('Word Generation','Semantic vs rest','Line vs rest','Semantic vs Line','Auditory Naming')
 method1 <- 'flip' #the mean voxel activations are saved with the flip method
@@ -432,7 +473,7 @@ mymask <- mask[thismask]
 
 for (t in c(1,2)){ #WG1, PP1, 
 mycount <- mycount+1
-mytask <- task[t]
+mytask <- tlist[t]
 forplot <- filter(bigdf,method==method1 & task==mytask & mask==mymask)
 w<-which(is.na(forplot$Doplat)) #find and remove rows with no Doppler lat
 forplot <- forplot[-w,]
@@ -467,14 +508,14 @@ allplot[[mycount]] = myplot
 }
 }
 myallplot <- ggarrange(allplot[[1]],allplot[[2]],allplot[[3]],allplot[[4]],allplot[[5]],allplot[[6]],allplot[[7]],allplot[[8]],ncol=2,nrow=4,common.legend=TRUE)
-savename<-paste0('LR_3tasks_4mask.eps')
+savename<-paste0('LR_3tasks_4mask',filetype)
 ggsave(here('Plots',savename),myallplot,width=6,height=10,dpi=300)
 
 }
 
 ```
 
-![Mean L and R activations by task and ROI: dotted blue lines show mean for typically (L) lateralised individuals, as categorised on fTCD](images/LR_3tasks_4mask.eps)
+![Mean L and R activations by task and ROI: dotted blue lines show mean for typically (L) lateralised individuals, as categorised on fTCD](images/LR_3tasks_4mask-01.jpg)
 
 Figure x shows the scatterplots with mean activations on left and right. The sloping dotted line is the point of equivalence for left and right: as expected, for the three ROIs contributing to the MCA, individuals who are categorised as left-lateralised tend to fall above this line, indicating more activation on left than right, and those who are right-lateralised tend to fall below the line. For the cerebellar mask, this pattern is reversed, with left-lateralised individuals showing greater activation on the right, and vice versa.
 
@@ -482,30 +523,95 @@ The plots also shows different patterns across ROIs in the levels of activation 
 
 The profile for Semantic matching is rather different, with a less striking difference between the two sides, and no sign of the parietal lobe right hemisphere deactivation seen with Word Generation.
 
-### 3.  Correspondence of LI from fTCD and fMRI, according to task and region
+### 3. Correspondence of LI from fTCD and fMRI, according to task and region
 
 Figures x and xx shows plots similar to those in Figure x, but broken down by ROI. Note that the fTCD, shown on the x-axis, cannot give information about ROI, as it is a simple measure of blood flow velocity in the left and right MCAs. The interest in these plots is to see whether fTCD shows any regional sensitivity in the laterality differences that are detected.
 
 With the subtraction method, the fMRI shows good agreement with fTCD LI in frontal and parietal regions for both tasks, and also with the cerebellar region for the Word Generation task. The agreement is generally less good for the Toolbox LI.
 
+```{r comparenothresh,echo=F}
+#Just of interest to see agreement with the no threshold method
+donothresh <-0
+if(donothresh==1){
+nothresh <- read.csv(here('Bruckert','Licomparisons','Tbox_nothresh_WG_MCA.csv'))
+nothresh <- clean_names(nothresh)
+nothresh$id <- as.numeric(substr(nothresh$input_image,1,3)) #just first 3 chars
+flipvals <- filter(bigdf,mask=='mca',task=='WG1',method=='flip')
+bootvals<- filter(bigdf,mask=='mca',task=='WG1',method=='toolbox')
+dopvals<- filter(bigdf,mask=='mca',task=='WG1',method=='Doppler')
+
+#we'll just bolt cols on to dopvals for comparison (dopvals has 31 rows, others hav 32)
+dopvals$flipLI<-NA
+dopvals$bootLI<-NA
+dopvals$nothreshLI <- NA
+w<-which(names(dopvals)=='mean')
+names(dopvals)[w]<-'DopplerLI'
+for (i in 1:nrow(dopvals)){
+  mysub <- dopvals$id[i]
+  dopvals$flipLI[i]<-flipvals$mean[flipvals$id==mysub]
+  dopvals$bootLI[i]<-bootvals$mean[bootvals$id==mysub]
+  dopvals$nothreshLI[i]<-nothresh$li[nothresh$id==mysub]
+}
+forpair <- dopvals[,c('DopplerLI','flipLI','bootLI','nothreshLI')]
+#pairs(forpair)
+#cor(forpair)
+}
+```
+
 ### Discussion
 
-The subtraction method for fMRI laterality estimates generally agrees well with fTCD laterality indices, whereas the Toolbox LI has weaker correlations. It is important to note that the fTCD LI cannot be regarded as a gold standard, as it does not have any sensitivity to localisation of activation. One possible explanation for the better agreement with subtraction LI is simply that the data processing is similar in the two methods, involving simple subtraction of measures of activation on the left and right.
+The subtraction method for fMRI laterality estimates generally agrees well with fTCD laterality indices, whereas the Toolbox LI has somewhat weaker correlations. It is important to note that the fTCD LI cannot be regarded as a gold standard, as it does not have any sensitivity to localisation of activation. One possible explanation for the better agreement with subtraction LI is that the data processing is more similar to that in fTCD, involving simple subtraction of measures of activation on the left and right.
 
-There are, however, two other aspects of the data that suggest two other reasons why the Toolbox LI may give weaker agreement with fTCD LI: first, it ignores task-related deactivation, and second, it will be influenced by the range of thresholds that are used in its calculation.
+There are, however, two other aspects of the data that suggest two other reasons why the Toolbox LI may give weaker agreement with fTCD LI: first, it ignores task-related deactivation, and second, it is influenced by the range of thresholds that are used in its calculation.
 
 #### Importance of task-related deactivation
 
-The data on left and right hemisphere mean activations shown in Figure x suggests that language laterality may depend on deactivation as well as activation. Indeed, this is already suggested by scrutiny of the mean task related blood flow evident in the fTCD data (Figure x). On the Word Generation task, we first see an increase in blood flow to both hemispheres as the participant starts to perform the task, but then blood flow declines in both hemispheres, with the right hemisphere values dropping below the baseline level.
+The data on left and right hemisphere mean activations shown in Figure x suggest that language laterality may depend on deactivation as well as activation. Indeed, this is already suggested by scrutiny of the mean task related blood flow evident in the fTCD data (Figure x). On the Word Generation task, we first see an increase in blood flow to both hemispheres as the participant starts to perform the task, but then blood flow declines in both hemispheres, with the right hemisphere values dropping below the baseline level.
 
 The ROI analyses shown in Figure x show that deactivation is region-dependent. The data from the parietal lobe is particularly striking: even for those with typical language lateralisation, we see average deactivation in both left and right hemispheres, with the deactivation being more marked on the right.
 
 The mechanism underlying such phenomena is not understood, though we know that the Circle of Willis allows for compensatory changes in blood flow between posterior and anterior cerebral blood vessels, and between the two sides of the brain. It is possible that a task that makes increased metabolic demands in the left frontal lobe will lead to a corresponding decrease in blood flow in posterior regions, and in the right hemisphere relative to the left.
 
-If, as seems to be the case, functional lateralisation for language is manifest in deactivation of some regions, then we will fail to detect this phenomenon by relying on a laterality index that ignores all voxels with negative t-values.
+If, as seems to be the case, functional lateralisation for language is manifest in deactivation of some regions, then we will fail to detect this phenomenon by relying on a laterality index that ignores voxels with negative t-values.
 
 #### Impact of thresholds in LI Toolbox estimates
 
-There is a striking difference in the confidence intervals associated with the Toolbox LIs and those estimated from the same data using the subtraction approach - so much so that we initially suspected a computational error may be implicated. However, the LI Toolbox estimates have very large standard errors precisely because they are based on a very wide range of thresholds. Figure x shows illustrative histograms that form part of the output of the LI Toolbox. These come from a single person and task. One can see that the LI estimates cover a very broad range, but the distribution is far from uniform: individual clusters of LIs in the histogram have highly peaked distributions: each of these corresponds to a different threshold at which the LI is estimated. There is little variation of estimates within a threshold, but substantial variation between thresholds. Furthermore, these estimates are based on different amounts of data - the more extreme the threshold, the fewer the datapoints it is based on. The Toolbox gives the user a wide range of options for computing the LI, ranging from a simple mean, a trimmed mean, and a weighted mean - all of these take the whole set of data represented in the histogram, but the weighted mean weights the values according to the threshold, so giving more importance to higher activations. This means, however, that the greatest weight is given to the least reliable LI estimates, and the estimates based on the zero threshold are discarded. In the example shown in Figure x, the weighted mean of .19 is substantially lower than the simple average, as it is heavily influenced by the LI becoming right-biased at high thresholds.
+There is a striking difference in the confidence intervals associated with the Toolbox LIs and those estimated from the same data using the subtraction approach. The very large standard errors for toolbox estimates arise because they are based on a wide range of thresholds. Figure x shows illustrative histograms that form part of the output of the LI Toolbox. These come from a single person and task. One can see that the LI estimates cover a very broad range, but the distribution is far from uniform: individual clusters of LIs in the histogram have highly peaked distributions: each of these corresponds to a different threshold at which the LI is estimated. There is little variation of estimates within a threshold, but substantial variation between thresholds. Furthermore, these estimates are based on different amounts of data - the more extreme the threshold, the fewer the datapoints the LI is based on. The Toolbox gives the user a wide range of options for computing the LI, ranging from a simple mean, a trimmed mean, and a weighted mean - all of these take the whole set of data represented in the histogram, but the weighted mean gives more importance to higher activations. It follows, then, that estimates based on the zero threshold are discarded, and the greatest weight is given to the least reliable LI estimates. In the example shown in Figure x, the weighted mean of .19 is substantially lower than the simple average, as it is heavily influenced by the LI becoming right-biased at high thresholds.
 
-It is also worth noting that the range of thresholds used in the default settings of the LI toolbox is determined by the maximum t-value in the dataset. So a dataset with maximum value
+It is also worth noting that the range of thresholds used in the default settings of the LI toolbox is determined by the maximum t-value in the dataset. If, instead, one were to use a common set of thresholds for all datasets, e.g., ranging from 0 to 6 in steps of .5, then the LIs would look different: for instance, in the example shown in Figure x, the LI peaks at a point within that range when the ratio of left to right voxels is nearly 10:1, which would give a much greater laterality index than when a wider range of thresholds is used. The wide CIs seen with the toolbox estimates simply reflect the fact that the LI depends substantially on the threshold, and if we use a measure that takes into account a wide range of thresholds, then the LIs included in the distribution can have a very broad distribution of values.
+
+#### Future Directions
+
+We have presented few statistical analyses here because we lacked *a priori* hypotheses and with 32 participants had limited statistical power to detect differences between methods, ROIs and tasks. This study may be regarded as hypothesis-generating rather than hypothesis-testing, and may be used as the basis for making predictions in future analyses of new datasets. In particular, we propose that:
+
+The pattern of activation and deactivation of left and right hemispheres in different regions seen in Figure x will replicate, with tasks involving language generation showing strong left hemisphere bias in all regions, but with a gradient from overall activation in frontal regions to overall deactivation in posterior regions.
+
+Cerebellar activation will show a complementary pattern of lateralisation to frontal activation for tasks involving language generation, but not for receptive language tasks.
+
+Most individuals who are categorised as having bilateral language on conventional fMRI laterality indices will show significant bias to left or right when assessed using the subtraction method.
+
+In addition, the results obtained here raise questions about the anatomical basis of individual differences in language lateralisation, suggesting that in future there might be value in relating functional differences to anatomical differences in the circle of Willis \[@payne2017\], \[@kızılgöz2022\].
+
+```{r willisbit,echo=F}
+#Just playing here - not sure what I'm doing but interest in model where increase in one region leads to decrease in another
+dowillis<-0
+if (dowillis==1){
+wbit <- filter(bigdf,method=='flip',task=='WG1',mask!='mca')
+roibits <- data.frame(matrix(NA,nrow=(nrow(wbit)/4),ncol=9))
+
+for (r in 1:4){
+  startcol=r*2
+  roibits[,startcol:(startcol+1)]<-wbit[wbit$mask==mask[(r+1)],2:3]
+  names(roibits)[startcol:(startcol+1)]<-c(paste0(mask[(r+1)],'_L'),paste0(mask[(r+1)],'_R'))
+}
+names(roibits)[1]<-'id'
+roibits$id <- wbit$id[1:(nrow(wbit)/4)]
+
+pairs(roibits[,2:9])
+#all positively correlated.
+# But what if we subtract overall mean activation?
+roibitsx <- roibits
+roibitsx[,2:9]<-roibitsx[,2:9]/rowMeans(roibitsx[,2:9])
+pairs(roibitsx[,2:9])
+}
+```
