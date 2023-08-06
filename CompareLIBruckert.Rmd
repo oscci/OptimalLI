@@ -22,6 +22,7 @@ require(here)
 require(janitor) #clean up names from external files
 require(ggpubr)
 require(RVAideMemoire) #for CI for Spearman r
+require(yarrr)
 ```
 
 ## Data from fMRI
@@ -56,6 +57,15 @@ allLI <- clean_names(allLI) #from janitor package - names more uniform
 #for Lisa's data we can just take the number based on 3 chars of input_image - this is unique to each participant
 allLI$id <- substr(allLI$input_image,1,3) #just first 3 chars
 idlist <-unique(allLI$id) #complete list of ids - will use later for matching up
+
+allLI$origcat <- substr(allLI$input_image,6,6) #Lisa's categorisation
+
+catlookup<-as.data.frame(idlist)
+names(catlookup)[1]<-'id'
+for (i in 1:nrow(catlookup)){
+  w<-which(allLI$id==catlookup$id[i])
+  catlookup$origcat[i]<-allLI$origcat[w[1]]
+}
 
 #need to code task: this is buried in input_image
 allLI$task <- NA
@@ -199,8 +209,9 @@ bigdf$hand <- NA
 bigdf$lat_group <- NA
 for (i in 1:nrow(demog)){
   w<-which(bigdf$id==demog$id[i])
+  bigdf$origcat <- demog$group_cat[i] #0 is typical and 1 is atypical
   bigdf$hand[w]<-demog$hand_self_report[i]
-  bigdf$lat_group[w]<-demog$group_lat[i]
+  bigdf$lat_group[w]<-demog$group_lat[i] #1 is L, 2 is bilat and 3 is R
 }
 
 #We include a colour code that can be used later in plotting
@@ -213,6 +224,9 @@ bigdf$pchcol <- mypch[bigdf$lat_group]
 bigdf$pchcol <- as.factor(bigdf$pchcol)
 bigdf$lat_group <- as.factor(bigdf$lat_group)
 levels(bigdf$lat_group)<- c('Left','Bilateral','Right')
+bigdf$atypical<-1
+w<-which(bigdf$lat_group=='Left')
+bigdf$atypical[w]<-0  #Lisa original groups
 
 #NB so far the lat_group is Lisa's original grouping
 #Here I will add a new lat_group based on whether this measures CI crossed zero
@@ -350,7 +364,7 @@ for (thismask in 2:5){
 mymask <- mask[thismask]
 
 
-for (t in c(1,2,5)){ #WG1, PP1, AN5
+for (t in c(1,4,5)){ #WG1, PP5, AN5
 mycount <- mycount+1
 mytask <- task[t]
 forplot <- filter(bigdf,method==methodX & task==mytask & mask==mymask)
@@ -386,19 +400,22 @@ allplot[[mycount]] = myplot
 }
 }
 myallplot <- ggarrange(allplot[[1]],allplot[[2]],allplot[[3]],allplot[[4]],allplot[[5]],allplot[[6]],allplot[[7]],allplot[[8]],allplot[[9]],allplot[[10]],allplot[[11]],allplot[[12]],ncol=3,nrow=4,common.legend=TRUE)
-savename<-paste0('LR_3tasks_4mask.png')
+savename<-paste0('LR_3tasks_4maskB.png')
 ggsave(here('Bruckert','Plots',savename),myallplot,width=6,height=10,dpi=300)
 
 }
 ```
 
 ```{r plot5regions}
-plot5 <-0
+mask <- c('mca','frontal','temporal','parietal','cerebellar')
+plot5 <-1
 if(plot5==1){
-#method options are "Doppler","mirror","toolbox" - now with mirrorLI which is LI from mirror data
+#method options are "Doppler","mirror","toolbox" - can add mirrorLI which is LI formula applied to mirror data
 mymethod <- c('Doppler','mirror','toolbox')
+methodlabel <- c('fTCD GAM - rescaled','fMRI: Mirror - rescaled','fMRI: Toolbox LI')
 tlist <- c('WG1','PP1','PP5')
 longlist <- c('Word Generation', 'Semantic Match','Sem Match - Baseline')#
+tlist<-tlist[1:2] #ignore PP5
 for (t in 1:length(tlist)){ #new plot started with new task
 mytask <- tlist[t]
 longtask <- longlist[t]
@@ -408,7 +425,7 @@ methX <- 1
 for (methY in 2:3){ #methods 2 and 3 will be compared side by side
 methodX <- mymethod[methX]
 methodY <- mymethod[methY]
-methodlabel <- c('fTCD GAM - rescaled','fMRI: Subtracted - rescaled','fMRI: LI toolbox','LI from mirror')
+
 
 mytaskx <- mytask
 if(mytaskx=='PP5' && methX ==1){mytaskx <- 'PP1'}
@@ -494,24 +511,27 @@ ggsave(here('Bruckert','Plots',savename),myplot3,width=6,height=6,dpi=300)
 }
 ```
 
-now look at toolbox vs tbox6
+now look at toolbox vs tbox6 (also use chunk for toolbox vs mirror)
 
 
 ```{r tryplot2}
-tryplot2 <- 0 #this flag can be set to zero so we can skip this step if need be
+tryplot2 <- 1 #this flag can be set to zero so we can skip this step if need be
 if (tryplot2==1){
  
-mymethod <- c('tbox6','toolbox')
-
+# mymethod <- c('tbox6','toolbox') - originally used this chunk for 2 toolbox methods
+mymethod <- c('mirror','toolbox')
+mask <- c('frontal','temporal','parietal','cerebellar')
+task <- c('WG1','AN5','PP5')
+task2 <- c('Word Gen','Aud Nam','Sem Match')
 methX <- 1
 methY <- 2
 methodX <- mymethod[methX]
 methodY <- mymethod[methY]
-methodlabel <- c('Toolbox_thresh6','Toolbox-threshmax')
+methodlabel <- c('Mirror - rescaled','Toolbox weighted mean')
 mycount <-0
 allplot <- list() #we'll save the plots in a list so we can flexibly reference them later with ggarrange
-tlist <- c(1,2) # tasks to include: WG1, PP1
-for (thismask in c(1,2,4)){
+tlist <- 1:3 # tasks to include: 
+for (thismask in 1:4){
 mymask <- mask[thismask]
 
 for (t in tlist){
@@ -531,9 +551,9 @@ correlcoef <- round(cor.test (forplot$x, forplot$y, method = "spearman",  exact 
 
 corspear <-spearman.ci(forplot$x,forplot$y, nrep = 1000, conf.level = 0.95)
 #correlcoef <- paste0('$r_s$ = ',correlcoef,' [',round(corspear$conf.int[1],3),', ',round(corspear$conf.int[2],3),']')
-text3 <-paste0('Spearman r: \n',correlcoef,' [',round(corspear$conf.int[1],3),', ',round(corspear$conf.int[2],3),']')
+text3 <-paste0(' r = ',correlcoef,' [',round(corspear$conf.int[1],3),', ',round(corspear$conf.int[2],3),']')
 
-text2 <- paste0('mean X = ',round(mean(forplot$x),2),'; \nmean Y = ',round(mean(forplot$y),2))
+text2 <- paste0('mean mirror = ',round(mean(forplot$x),2),'; \nmean toolbox = ',round(mean(forplot$y),2))
 myplot <- ggplot(data = forplot,aes(x = x,y = y)) + 
   geom_point()+
   #geom_errorbar(aes(ymin = ymin,ymax = ymax)) + 
@@ -542,12 +562,12 @@ myplot <- ggplot(data = forplot,aes(x = x,y = y)) +
   ylab(methodlabel[methY])+
   xlim(-1,1)+
   ylim(-1,1)+
-  ggtitle(paste0(mymask,": ",mytask))+
+  ggtitle(paste0(mymask,": ",task2[t]))+
   geom_hline(yintercept = 0, linetype="solid",col='grey') + 
   geom_vline(xintercept = 0, linetype= "solid", col='grey')  + 
   geom_abline(slope=1,intercept=0)+
-  annotate("text",x = -.5, y = .9, label = text3,col='black',size=3)+
-    annotate("text",x = -.5, y = .65, label = text2,col='black',size=3)+
+  annotate("text",x = -.4, y = .95, label = text3,col='black',size=3)+
+   # annotate("text",x = -.5, y = .7, label = text2,col='black',size=3)+
    theme(legend.position = "none")
 
 
@@ -556,8 +576,10 @@ allplot[[mycount]] = myplot
 }
 }
 
-myallplot <- ggarrange(allplot[[1]],allplot[[2]],allplot[[3]],allplot[[4]],allplot[[5]],allplot[[6]],ncol=2,nrow=3,common.legend=mylegend)
-savename<-paste0(methodX,'_',methodY,'_2tasks_3masks.jpg')
+if (mycount==12){
+myallplot <- ggarrange(allplot[[1]],allplot[[2]],allplot[[3]],allplot[[4]],allplot[[5]],allplot[[6]],allplot[[7]],allplot[[8]],allplot[[9]],allplot[[10]],allplot[[11]],allplot[[12]],ncol=3,nrow=4)
+savename<-paste0(methodX,'_',methodY,'_3tasks_4masks.jpg')
+}
 
 ggsave(here('Bruckert','Plots',savename),myallplot,width=8,height=12,dpi=300)
 
@@ -607,5 +629,292 @@ for (n in 1:2){
 #rquery.cormat(cordata[,2:])
 round(cor(cordata[,2:7],use='complete.obs'),3)
 round(cor(cordata[,8:13],use='complete.obs'),3)
+```
+
+
+Do big correlation table of toolbox vs mirror for 4 regions and 3 tasks
+
+
+```{r cormatfuncs}
+
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(cormat){
+    cormat[upper.tri(cormat)] <- NA
+    return(cormat)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+
+```
+
+
+```{r correl3tasks4masks2methods}
+
+tasks <- c('WG1','AN5','PP1')
+masks <- c('frontal','temporal','parietal','cerebellar')
+meths <- c('toolbox','mirror')
+
+
+forcorrel<-select(bigdf,id,method, mask,task,mean)
+# forcorrel <-filter(forcorrel,task %in% tasks)
+# forcorrel <- filter(forcorrel, mask %in% masks)
+# forcorrel<-filter(forcorrel,method %in% meths)
+
+allids <- unique(bigdf$id)
+allids<-allids[order(allids)]
+cordata <- data.frame(matrix(NA,nrow=length(allids),ncol=(1+length(masks)*length(tasks)*length(meths))))
+names(cordata)[1]<-'id'
+for (i in 1:nrow(cordata)){
+thiscol <-1 #reset column counter
+for (n in 1:length(meths)){
+    for (t in 1:length(tasks)){
+     for (m in 1:length(masks)){
+
+    thiscol<-thiscol+1
+   # print(paste0('row',i,'_',thiscol))
+    #intersect only works for pairs of variables!
+    w1 <-which(forcorrel$method==meths[n])
+    w2 <-which(forcorrel$task==tasks[t])
+    w3 <- which(forcorrel$mask==masks[m])
+    w4 <- which(forcorrel$id==allids[i])
+    w5 <- intersect(w1,w2)
+    w6 <- intersect(w3,w4)
+    w <- intersect(w5,w6)
+
+      cordata[i,1]<-allids[i]
+      if(length(w)>0){
+      cordata[i,thiscol]<-forcorrel$mean[w]
+      }
+      if(i==1){
+        names(cordata)[thiscol]<-paste0(meths[n],masks[m],tasks[t])
+       }
+     }
+   }
+  }
+}
+
+
+# round(cor(cordata[,2:7],use='complete.obs'),3)
+# round(cor(cordata[,8:13],use='complete.obs'),3)
+cormat.t <- round(cor(cordata[,2:13],use='complete.obs'),3)
+cormat.m <- round(cor(cordata[,14:25],use='complete.obs'),3)
+
+# from http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
+library(reshape2)
+melted_cormat.t <- melt(cormat.t)
+melted_cormat.m <- melt(cormat.m)
+heat.t <- ggplot(data = melted_cormat.t, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+heat.t
+
+heat.m <- ggplot(data = melted_cormat.m, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+heat.m
+
+#toolbox upper triangle and mirror lower
+
+c1 <- get_upper_tri(cormat.t)
+c2 <- get_lower_tri(cormat.m)
+
+row.names(c1)<-c('frontalWG','temporalWG','parietalWG','cerebellarWG','frontalAN','temporalAN','parietalAN','cerebellarAN','frontalSM','temporalSM','parietalSM','cerebellarSM')
+row.names(c2)<-colnames(c1)<-colnames(c2)<-row.names(c1)
+
+bothc <- c2
+for (i in 1:(nrow(c1)-1)){
+  for (j in (i+1):nrow(c1)){
+    bothc[i,j]<-c1[i,j]
+  }
+}
+diag(bothc)<-NA
+melted_cormat.b <- melt(bothc)
+
+heat.b <- ggplot(data = melted_cormat.b, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+heat.b
+
+```
+
+
+
+Maybe try 3 factor SEM in lavaan?
+
+
+Plot function from COLA
+```{r doSemPaths,echo=F,warning=F,message=F}
+#Path diagram for SEM saved to file in .eps format
+doSemPath <- function(myfit,mytitle,mypathfigname,mynodes){
+  #NB order of mynodes is important! default is for them to be ordered in the same order as they occur in the model specification - mynodes gives the long names
+setEPS()
+postscript(mypathfigname)
+
+semPaths(myfit, "std",weighted = FALSE, shapeMan = "rectangle", sizeMan = 16, 
+    sizeMan2 = 5,rotation=4,edge.color='black',asize=2,edge.label.cex=1.1,nodeLabels=mynodes,whatLabels="std",bg="white",width=9,height=6) #draws a path diagram
+
+title(mytitle, line=3)
+dev.off()
+}
+```
+```{r SEM}
+#Question is whether we treat the ROIscores or the task scores as indicators. 
+#Will try with ROI as indicators.
+#This then is modelled directly on the Lavaan CFA from HozlingerSwineford
+
+#cordata has the relevant data
+require(lavaan)
+library(semPlot)
+
+toolbox.model <- ' wg =~ toolboxfrontalWG1 + toolboxtemporalWG1 + toolboxparietalWG1 + toolboxcerebellarWG1
+an =~ toolboxfrontalAN5 + toolboxtemporalAN5 + toolboxparietalAN5 + toolboxcerebellarAN5
+sm =~ toolboxfrontalPP5 + toolboxtemporalPP5 + toolboxparietalPP5 + toolboxcerebellarPP5 '
+
+toolboxfit <- cfa(toolbox.model, data = cordata)
+summary(toolboxfit,fit.measure=TRUE)
+
+
+mirror.model <- ' wg =~ mirrorfrontalWG1 + mirrortemporalWG1 + mirrorparietalWG1 + mirrorcerebellarWG1
+an =~ mirrorfrontalAN5 + mirrortemporalAN5 + mirrorparietalAN5 + mirrorcerebellarAN5
+sm =~ mirrorfrontalPP5 + mirrortemporalPP5 + mirrorparietalPP5 + mirrorcerebellarPP5 '
+
+mirrorfit <- cfa(mirror.model, data = cordata)
+summary(mirrorfit,fit.measure=TRUE)
+
+
+# mirror.model2 <- ' frontal =~ mirrorfrontalWG1 + mirrorfrontalAN5+mirrorfrontalPP5 
+# temporal =~ mirrortemporalWG1 + mirrortemporalAN5 + mirrortemporalPP5 
+# parietal =~ mirrorparietalWG1 + mirrorparietalAN5 + mirrorparietalPP5
+# cerebellar =~ mirrorcerebellarWG1 + mirrorcerebellarAN5+ mirrorcerebellarPP5 '
+# 
+# mirrorfit2 <- cfa(mirror.model2, data = cordata)
+# summary(mirrorfit2,fit.measure=TRUE)
+
+#doing it this way round gives v poor fit!
+#So it makes sense to specify model where latent factor is task rather than ROI
+
+#we could put in correlated errors for same ROIs
+
+pathfigname1<-here("Bruckert","Plots/pathfigtool.eps")
+mynodes<-c(names(cordata)[2:13],'  Word \nGeneration','  Auditory \nNaming','Semantic\nMatching') #spaces added to make all same size
+
+doSemPath(toolboxfit,'',pathfigname1,mynodes) #call function specified earlier to draw path diagram. 2nd term can be used for a title, but now made blank
+
+pathfigname2<-here("Bruckert","Plots/pathfigmirror.eps")
+mynodes<-c(names(cordata)[14:25],'  Word \nGeneration','  Auditory \nNaming','Semantic\nMatching') #spaces added to make all same size
+
+doSemPath(mirrorfit,'',pathfigname2,mynodes) #call function specified earlier to draw path diagram. 2nd term can be used for a title, but now made blank
+
+#Given high correlation between factors, try single factor model
+
+
+toolboxsingle.model <- ' F1 =~ toolboxfrontalWG1 + toolboxtemporalWG1 + toolboxparietalWG1 + toolboxcerebellarWG1 + toolboxfrontalAN5 + toolboxtemporalAN5 + toolboxparietalAN5 + toolboxcerebellarAN5+ toolboxfrontalPP5 + toolboxtemporalPP5 + toolboxparietalPP5 + toolboxcerebellarPP5 '
+
+toolboxsinglefit <- cfa(toolboxsingle.model, data = cordata)
+summary(toolboxsinglefit,fit.measure=TRUE)
+
+mirrorsingle.model <- ' F1 =~ mirrorfrontalWG1 + mirrortemporalWG1 + mirrorparietalWG1 + mirrorcerebellarWG1 + mirrorfrontalAN5 + mirrortemporalAN5 + mirrorparietalAN5 + mirrorcerebellarAN5+ mirrorfrontalPP5 + mirrortemporalPP5 + mirrorparietalPP5 + mirrorcerebellarPP5 '
+
+mirrorsinglefit <- cfa(mirrorsingle.model, data = cordata)
+summary(mirrorsinglefit,fit.measure=TRUE)
+
+require(semTools)
+mirrorcomp <- compareFit(mirrorsinglefit,mirrorfit)
+summary(mirrorcomp)
+
+toolboxcomp <- compareFit(toolboxsinglefit,toolboxfit)
+summary(toolboxcomp)
+
+#raises qu of why cerebellum so different for PP5
+plot(cordata$toolboxcerebellarPP5,cordata$mirrorcerebellarPP5)
+abline(a=0,b=1)
+abline(h=0)
+abline(v=0)
+cor(cordata$toolboxcerebellarPP5,cordata$mirrorcerebellarPP5,use='complete.obs')
+plot(cordata$toolboxcerebellarAN5,cordata$mirrorcerebellarAN5)
+abline(a=0,b=1)
+abline(h=0)
+abline(v=0)
+cor(cordata$toolboxcerebellarAN5,cordata$mirrorcerebellarAN5,use='complete.obs')
+```
+
+
+```{r comparemeanLI}
+tasklist <- c('WG1','AN5','PP1')
+tasknames <-c('Word Generation','Auditory Naming','Semantic Matching')
+
+masklist <- c('frontal','temporal','parietal','cerebellar')
+masknames <- c('front','temp','par','cereb')
+
+methods <-c('toolbox','mirror')
+
+n<-length(tasklist)*length(masklist)*length(methods)
+plist<-data.frame(matrix(NA,nrow=n,ncol=6))
+colnames(plist)<-c('method','task','mask','t','df','p')
+pirateplots<-list()
+tt <- 0
+
+
+typs<-filter(bigdf,atypical==0,method %in% methods,mask!='mca',task %in% tasklist)
+
+typs$task<-as.factor(typs$task)
+typs$task<-factor(typs$task, levels=tasklist)
+levels(typs$task)<-tasknames
+
+typs$mask<-as.factor(typs$mask)
+typs$mask<-factor(typs$mask, levels=masklist)
+levels(typs$mask)<-masknames
+
+
+typs$method<-as.factor(typs$method)
+
+
+thisplot<-pirateplot(formula = mean ~ mask +task+method,
+           data = typs,
+           theme = 1)
+
+
+
+#For each mask x task, check if sig different from zero
+
+for (m in levels(typs$method)){
+  for (j in levels(typs$task)){
+    for (i in levels(typs$mask)){
+      tt<-tt+1
+    thisdata <- filter(typs,task==j,mask==i)
+    thist <-t.test(thisdata$mean, alternative = c("two.sided"),mu = 0)
+    plist$task[tt]<-j
+    plist$mask[tt]<-i
+    plist$t[tt]<-thist$statistic
+    plist$df[tt]<-thist$parameter
+    plist$p[tt]<-thist$p.value
+    plist$method[tt]<-methods[m]
+  }
+}
+}
 ```
 
