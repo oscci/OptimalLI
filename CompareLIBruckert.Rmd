@@ -699,8 +699,8 @@ for (n in 1:length(meths)){
 
 # round(cor(cordata[,2:7],use='complete.obs'),3)
 # round(cor(cordata[,8:13],use='complete.obs'),3)
-cormat.t <- round(cor(cordata[,2:13],use='complete.obs'),3)
-cormat.m <- round(cor(cordata[,14:25],use='complete.obs'),3)
+cormat.t <- round(cor(cordata[,2:13],use='complete.obs',method='spearman'),3)
+cormat.m <- round(cor(cordata[,14:25],use='complete.obs',method='spearman'),3)
 
 # from http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization
 library(reshape2)
@@ -710,7 +710,7 @@ heat.t <- ggplot(data = melted_cormat.t, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab", 
-   name="Pearson\nCorrelation") +
+   name="Spearman\nCorrelation") +
   theme_minimal()+ 
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
     size = 12, hjust = 1))+
@@ -722,7 +722,7 @@ heat.m <- ggplot(data = melted_cormat.m, aes(Var2, Var1, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab", 
-   name="Pearson\nCorrelation") +
+   name="Spearman\nCorrelation") +
   theme_minimal()+ 
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
     size = 12, hjust = 1))+
@@ -735,7 +735,7 @@ heat.m
 c1 <- get_upper_tri(cormat.t)
 c2 <- get_lower_tri(cormat.m)
 
-row.names(c1)<-c('frontalWG','temporalWG','parietalWG','cerebellarWG','frontalAN','temporalAN','parietalAN','cerebellarAN','frontalSM','temporalSM','parietalSM','cerebellarSM')
+row.names(c1)<-c('frontal_WG','temporal_WG','parietal_WG','cerebellar_WG','frontal_AN','temporal_AN','parietal_AN','cerebellar_AN','frontal_SM','temporal_SM','parietal_SM','cerebellar_SM')
 row.names(c2)<-colnames(c1)<-colnames(c2)<-row.names(c1)
 
 bothc <- c2
@@ -747,17 +747,22 @@ for (i in 1:(nrow(c1)-1)){
 diag(bothc)<-NA
 melted_cormat.b <- melt(bothc)
 
-heat.b <- ggplot(data = melted_cormat.b, aes(Var2, Var1, fill = value))+
+heat.b <- ggplot(data = melted_cormat.b, aes(Var1, Var2, fill = value))+
  geom_tile(color = "white")+
  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
    midpoint = 0, limit = c(-1,1), space = "Lab", 
-   name="Pearson\nCorrelation") +
-  theme_minimal()+ 
+   name="Spearman\nCorrelation") +
+  theme_bw()+ 
  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-    size = 12, hjust = 1))+
- coord_fixed()
+    size = 10, hjust = 1))+
+    theme(axis.title.x=element_blank())+ #remove x axis title
+  theme(axis.title.y=element_blank())+ 
+ coord_fixed()+
+ scale_y_discrete(limits = rev(levels(melted_cormat.b$Var1)))
+    
 
 heat.b
+ggsave(here('_optimal_writeup','Images','heatcorrel.png'))
 
 ```
 
@@ -878,7 +883,7 @@ colnames(plist)<-c('method','task','mask','t','df','p')
 pirateplots<-list()
 tt <- 0
 
-
+#Only do this for typicals
 typs<-filter(bigdf,atypical==0,method %in% methods,mask!='mca',task %in% tasklist)
 
 typs$task<-as.factor(typs$task)
