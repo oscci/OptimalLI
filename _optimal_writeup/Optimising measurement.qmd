@@ -4,7 +4,7 @@ more on bilateral in abstract?
 Auditory naming materials?
 LI-tool or LI-toolbox?
 consistent in -ize
-data analysis suggests direct comparison between 2 fmri methods - should correlation matrix go in another supplement?
+
 Double check discussion "The mirror LI estimates suggest that, at least for a word generation task, the averaged maps may obscure the fact that most individuals have a significant bias to left or right-sided language." proportions with aud nam.ppt?
 
 ---
@@ -277,7 +277,7 @@ We first present averaged t-statistic maps showing fMRI patterns of activation  
 
 The next set of analyses was conducted to look at the agreement between LI estimates from fMRI and those from fTCD for word generation and semantic matching. The similarity between LI~fMRI~ and LI~fTCD~ was assessed using scatterplots and bivariate correlations. As we anticipated that the LI values may not fit a normal distribution, we used Spearman's rank correlations instead of Pearson's correlations. Bootstrapping was used to calculate the 95% confidence intervals around the Spearman correlations [@herve2022].
 
-Finally, we consider agreement between the two methods of computing LI~fMRI~ for the three tasks and four ROIs.
+Finally, we consider agreement between the three tasks and four ROIs for the two methods of computing LI~fMRI~.
 
 
 ## Results
@@ -485,7 +485,7 @@ for (i in 1:(nrow(mywg)/2)){
 
 ```
 
-![Scatterplots of relationship between fTCD and two methods of fMRI laterality for MCA region. Spearman correlations with 95% CIs are shown as annotations.](images/Doppler_fmri2meth_MCA_2task.pdf){#fig-MCAscatter width="90%"}
+![Scatterplots of relationship between fTCD and two methods of fMRI laterality for MCA region. Spearman correlations with 95% CIs are shown as annotations.](images/Doppler_fmri2meth_fronttemp_PP1.jpg){#fig-MCAscatter width="90%"}
 
 @fig-MCAscatter shows the relationship between fTCD laterality (x-axis) and fMRI laterality (y-axis) for the original LI toolbox bootstrap method in the left panels and the new mirror method in the right panels. The upper panels show results for word generation, and the lower panels for semantic matching. Points are colour-coded according to categorical laterality classification on LI~fTCD~ for that task: grey points are those where the 95% confidence interval crosses zero, and are hence coded bilateral. Points in red are right-lateralised, and those in blue are left-lateralised. Note that the high proportion of bilateral/right-lateralised cases reflects the fact that the sample was selected to include 50% atypically lateralised individuals. The plot also shows the Spearman correlation between fTCD and fMRI laterality, with the 95% confidence interval. The percentage of individuals identified as having bilateral language on fMRI is also shown, again using the criterion of whether the 95% confidence interval of the estimate crosses zero. Not shown in the plots is the correlation between laterality estimates from the two fMRI methods: the Spearman correlation [95% CI] between mirror and toolbox methods was `r round(corWG$estimate,3)` \[`r round(corWG$conf.int[1],3)`, `r round(corWG$conf.int[2],3)`\] for word generation and `r round(corSM$estimate,3)` \[`r round(corSM$conf.int[1],3)`, `r round(corSM$conf.int[2],3)`\] for semantic matching.  
 
@@ -503,8 +503,13 @@ We will discuss possible explanations of these results below, but first we turn 
 
 For both tasks, as was seen with the MCA ROI, the proportion of individuals categorised as left- or right-lateralised with bilateral language is much smaller with the mirror method than with the toolbox method, reflecting the large confidence intervals associated with the toolbox estimates. In other words, people who appear to have bilateral language with the toolbox method appear reliably lateralised to left or right with the mirror method. 
 
+### 3. Consistency of laterality across tasks and ROIs  
 
-### Discussion
+![Heatmap of Spearman correlations between LIs for three tasks and four ROIs. Mirror method is above the diagonal, and toolbox method below the diagonal. Tasks denoted by WG (word generation), AN (auditory naming) and SM (semantic matching)](images/heatcorrel.png){#fig-heatcorrel}  
+
+Spearman correlations between LIs from the three tasks and four ROIs are shown in @fig-heatcorrel. Considering first the within-task correlations for the mirror method, one can see that for all three tasks, there is a positive correlation between frontal and parietal LIs, and a negative correlation between frontal/parietal and cerebellar LIs. Correlations with temporal regions are generally similar in direction to frontal correlations, but weaker. In addition, LIs for a given ROI are generally positive across the three tasks.  Similar trends are seen for the toolbox LIs, but correlations tend to be a bit smaller in magnitude. 
+
+## Discussion
 
 Estimates of LI~fMRI~ using the mirror method generally agree well with LI~fTCD~, whereas the toolbox LI has somewhat weaker correlations. It is important to note that the LI~fTCD~ cannot be regarded as a gold standard, as it does not have any sensitivity to localisation of activation. One possible explanation for the better agreement with mirror LI~fMRI~ is that the data processing is more similar to that in fTCD, involving simple subtraction of measures of activation on the left and right.
 
@@ -514,7 +519,7 @@ There is, however, another reasons why the toolbox LI may give weaker agreement 
 
 @fig-brainmaps suggests that language laterality may depend on deactivation as well as activation. Indeed, this is already suggested by scrutiny of the mean task related blood flow in the fTCD data for the word generation task (@fig-dopplerdemo). We first see an increase in blood flow to both hemispheres as the participant starts to perform the task, but then blood flow declines in both hemispheres, with the right hemisphere values dropping below the baseline level. 
 
-The brain maps in @fig-brainmaps show that deactivation is particularly striking in the parietal lobe. The quantitative analyses of average left and right activation in different ROIs in Supplementary material 2 confirm that, even for those with typical language lateralisation, we see average decrease of activation below zero in both left and right hemispheres, with the deactivation being more marked on the right.
+The brain maps in @fig-brainmaps show that deactivation is particularly striking in the parietal lobe. The quantitative analyses of average left and right activation in different ROIs in Supplementary material 2 confirm that, even for those with typical language lateralisation, we see average decrease of activation below zero in both left and right hemispheres, with the deactivation being more marked on the right.  Furthermore, as can be seen in @fig-heatcorrel, there are positive correlations between LI in the frontal and parietal ROIs, suggesting a common mechanism determines the extent of lateralisation. There is also a negative correlation with the frontal/parietal LIs and that obtained from the cerebellar ROI; this is evident in all three tasks when the mirror method is used.  
 
 The mechanism underlying such phenomena is not understood, though we know that the circle of Willis allows for compensatory changes in blood flow between posterior and anterior cerebral blood vessels, and between the two sides of the brain [@payne2017]. It is possible that a task that makes increased metabolic demands in the left frontal lobe will lead to a corresponding decrease in blood flow in posterior regions, and in the right hemisphere relative to the left.
 
@@ -522,7 +527,7 @@ If, as seems to be the case, functional lateralisation for language is manifest 
 
 #### Categorisation of bilateral language
 
-Another difference between the two methods for computing LI~fMRI~ is in the size of confidence intervals around LI estimates, which are larger for the toolbox LI.  It follows that if bilateral language is categorised using the confidence interval around the mean estimate, then a high proportion of cases will be classed as bilateral using the toolbox method. The confidence intervals around the mirror LI estimates surprisingly small, given that they were based on relatively sparse samples of voxels in the difference map within a region. If we look only at averaged maps such as in @fig-brainmaps, we may get the impression that those with atypical lateralisation have similar activation on left and right sides of the brain during language tasks. The mirror LI estimates suggest that, at least for a word generation task, the averaged maps may obscure the fact that most individuals have a significant bias to left or right-sided language. 
+Another difference between the two methods for computing LI~fMRI~ is in the size of confidence intervals around LI estimates, which are larger for the toolbox LI.  It follows that if bilateral language is categorised using the confidence interval around the mean estimate, then a high proportion of cases will be classed as bilateral using the toolbox method. The confidence intervals around the mirror LI estimates surprisingly small, given that they were based on relatively sparse samples of voxels in the difference map within a region. If we look only at averaged maps such as in @fig-brainmaps, we may get the impression that those with atypical lateralisation have similar activation on left and right sides of the brain during language tasks. The mirror LI estimates suggest that averaged maps may obscure the fact that most individuals have a significant bias to left or right-sided language, even for a weakly lateralised task such as semantic matching. 
 
 
 Development of the LI Toolbox was a major breakthrough in laterality measurement from fMRI, providing a serious attempt to tackle the inconsistent and arbitrary methods that were being used to quantify individual differences. The method allows one to compute a fast and reliable measure of LI~fMRI~ that has been shown to be robust to outliers, and is supported by open and thoroughly-documented code. This makes it straightforward to explore how different settings of parameters can influence the LI estimates. The wide confidence intervals obtained with toolbox estimates do not reflect instability of the measures: rather, it reflects the fact that when a large set of possible thresholds is considered, the range of LI~fMRI~ estimates compatible with the observed data is large. This forces us back to the question of what is the best criterion for selecting a threshold, and we run into a difficult choice: a weighted mean is useful for giving most weight to the strongest evidence, but at the same time it means we rely most heavily on the least reliable estimates, based on a small number of voxels. In addition, if we take either the trimmed or weighted mean value from the distribution of LIs, this will be influenced by the range of t-values used to compute thresholds. Ultimately, while it is good to have an agreed convention of how to compute the LI~fMRI~, there remains some arbitrariness in how this is done.
