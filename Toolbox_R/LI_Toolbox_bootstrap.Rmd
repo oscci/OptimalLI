@@ -27,7 +27,7 @@ nsub = length(sublist)
 %Specify the directory where you want the output .txt file saved
 outDir = '/Users/dorothybishop/Rprojects/OptimalLI/bruckert/LIcomparisons/'
 %Change the outfile name to anything you like
-outfile=fullfile(outDir,'Tbox_WG_MCA.txt')
+outfile=fullfile(outDir,'Tbox_WG_MCA2.txt')
 
 %Loop through subjects: could specify desired subset here - currently set
 %to run through all files in sublist
@@ -38,7 +38,7 @@ for f = 1:nsub
 ```{r setdirs}
 
 dataDir = '/Volumes/Extreme_Pro/_fmri_data/bruckert_raw/FEAT_results/FLIRT_t_outputs/WG1/'
-maskfile =   '/Users/dorothybishop/Documents/MATLAB/spm12/toolbox/LI/data/LI-MCA-mask.nii'
+maskfile =   '/Users/dorothybishop/Documents/MATLAB/spm12/toolbox/LI/data/LI-mca2-mask.nii'
 exmaskfile =  '/Users/dorothybishop/Documents/MATLAB/spm12/toolbox/LI/data/LI-midline_5_ex.nii'
 #for R and L masks I only had .img files, so in matlab used writenifti to convert
 Rmaskfile =  '/Users/dorothybishop/Documents/MATLAB/spm12/toolbox/LI/data/Rvol.nii'
@@ -48,12 +48,12 @@ nsub = length(filelist)
 #Specify the directory where you want the output .txt file saved
 outDir = '/Users/dorothybishop/Rprojects/OptimalLI/bruckert/R_toolbox_out/'
 #Change the outfile name to anything you like
-outfile=paste0(outDir,'Tbox_WG_MCA.txt')
+outfile=paste0(outDir,'Tbox_WG_mca2.txt')
 
 ```
 
 Now we'll try to read a file and create arrays for data manipulation
-
+This is done by function readcombine
 
 ```{r readcombinearrays }
 readcombine <- function(myfile,maskfile,exmaskfile,RLfile){
@@ -61,66 +61,201 @@ mydata<-readNifti(paste0(dataDir,filelist[f]))
 myhead <- niftiHeader(mydata)
 mydim <- myhead$dim[2:4]
 mydata<-as.matrix(mydata)
-dim(mydata)<-mydim
+dim(mydata)<-mydim #need to explicitly set the dimensions for each array
 mymask<-as.matrix(readNifti(maskfile))
 dim(mymask)<-mydim
 exmask <- as.matrix(readNifti(exmaskfile))
 dim(exmask)<-mydim
+RLmask <- as.matrix(readNifti(RLfile))
+dim(RLmask)<-mydim
 
-sidemask <- as.matrix(readNifti(RLfile))
-dim(sidemask)<-mydim
-
-returnfile = mydata * mymask * exmask* sidemask
+returnfile = mydata * mymask * exmask *RLmask
 return(returnfile)
 }
 ```
 
+Function for bootstrapped samples
 
 
-```{r startloop}
-# set iterations and, linked, number of bootstraps at each step
-  iter = 4 #default is 20
-  its = iter * 5 #default is 5
-  perc = 25/100 #proportion to select on each iteration
-  
-for (f in 1:1){
-  myfile <- paste0(dataDir,filelist[f])
-  RLfile <- Rmaskfile
-  myarrayR <- readcombine(myfile,maskfile,exmaskfile,RLfile)
-  RLfile <- Lmaskfile
-  myarrayL <- readcombine(myfile,maskfile,exmaskfile,RLfile)
-  
-  mx = max(myarrayL+myarrayR)
-  #If fixed threshold wanted, need to set mx here
-  
-  #set thresholds: N thresholds is determined by iter: range by 0 to mx
-  thrs <- rep(0,iter)
-  		voxl = rep(0,iter)
-		  voxr = rep(0,iter)
-		  jn = matrix(0,nrow=iter,ncol=3)
-		  jn_all = matrix(nrow=iter,ncol=its^2)
-		  x = matrix(0,nrow=iter,ncol=its)
-		  y = matrix(0,nrow=iter,ncol=its)
-  for (j in 1:iter){
-    thrs[j] <- (j-1)*mx/iter
- #initialise various storage spaces 
-		  
+```{r bootstrap}
+#Function is done for L and R values from this specific threshold
+doboot <- function(vecL,vecR,its){
+# generate samples: left...
+  bL<-matrix(0,nrow=its)
+  bR<-matrix(0,nrow=its)
+ 
+   Lsamples <- as.integer(length(vecL)*perc)
+   if (Lsamples>breakpoint){
+     Lsamples <- breakpoint #breakpoint is max N samples to take
+   }
+     Rsamples <- as.integer(length(vecR)*perc)
+   if (Rsamples>breakpoint){
+     Rsamples <- breakpoint
+   }
+  jn_li = matrix(NA,nrow=its,ncol=its)
+  if((Lsamples>bailout) & (Rsamples>bailout)){ #if sample too small, defaults to jn_li as NA
+  for (k in 1:its){                  
+   bL[k] <-  sum(sample(vecL, Lsamples, replace = TRUE, prob = NULL)) #sample with replacement
+   bR[k] <-  sum(sample(vecR, Rsamples, replace = TRUE, prob = NULL)) #sample with replacement
+}
 
-		  
-  #Retain voxels exceeding this threshold in a vector: vector lengths will differ for L and R
-	myarrayL[myarrayL<thrs[j]] <- NA
-	myarrayR[myarrayR<thrs[j]] <- NA
-	
-	vecL <- as.vector(myarrayL)
-	rmL <- c(which(is.na(vecL)),which(vecL==0))
-	vecL <- vecL[-rmL]
-	vecR <- as.vector(myarrayR)
-	rmR <- c(which(is.na(vecR)),which(vecR==0))
-	vecR <- vecR[-rmR]
-	voxl[j]<-length(vecL)
-	voxr[j]<-length(vecR)
- }
+# generate LI-matrix from bootstrapped data: this is done in Toolbox version by pairing each element of  L sample with each element of R sample
+# loop over iterations: left first...
+# initialise jn_li
+
+  for (k in 1:its){
+	l = bL[k]
+
+	# ... then right
+	  for (kk in 1:its){
+		r = bR[kk]
+
+		# calculate li, store away
+		  jn_li[k,kk] = (l-r)/(l+r)
+    }
+  }
+}
+return(as.vector(jn_li))
 }
 ```
 
+MAIN LOOP FOR PROCESSING EACH FILE STARTS HERE!
 
+```{r startloop}
+# set critical number of voxels (ncr), minimum cluster size (k), and minimum number of voxels (nabort)
+  breakpoint = 10000 #default is 10000 - if proportion selected voxels exceeds this, just select this N voxels
+  ncr = 10     # default: 10
+  k = 5        # default: 5
+  bailout = 0   # default: 5 - only compute LI for threshold if N voxels selected by perc is > bailout on either side; else do not compute LI - NB the *plot* from toolbox shows bailout of 0
+  
+# set iterations and, linked, number of bootstraps at each step
+  iter = 20 #default is 20
+  its = iter * 5 #default is 5
+  perc = 25/100 #proportion to select on each iteration
+  
+allsum = data.frame(matrix(0,nrow=nsub,ncol=15))
+colnames(allsum)<-c('ID','maxthr','voxatmax','meanLI','p5_LImean','p95_LImean','trimmeanLI','p5_trimmeanLI','p95_trimmeanLI','wtmean','p5_wtmean','p95_wtmean','wm','mask','exmask')  
+for (f in 1:nsub){
+  myfile <- paste0(dataDir,filelist[f])
+  print(myfile)
+  RLfile <- Lmaskfile
+  myarrayL <- readcombine(myfile,maskfile,exmaskfile,RLfile)
+   RLfile <- Rmaskfile
+  myarrayR <- readcombine(myfile,maskfile,exmaskfile,RLfile)
+   mx = max(c(myarrayL,myarrayR))
+  #If fixed threshold wanted, need to set mx here
+  
+  #set thresholds: N thresholds is determined by iter: range by 0 to mx
+  thrs <- rep(0, iter)
+  voxl = rep(0, iter)
+  voxr = rep(0, iter)
+  sumLI = data.frame(matrix(0, nrow = iter, ncol = 5))
+  colnames(sumLI) <-
+    c('threshold', 'NvoxL', 'NvoxR', 'meanLIt', 'trimmeanLIt')
+  
+  
+  jn_all = matrix(nrow = iter, ncol = its ^ 2)
+  x = matrix(0, nrow = iter, ncol = its)
+  y = matrix(0, nrow = iter, ncol = its)
+
+ 
+  
+ 
+  for (j in 1:iter){
+    thrs[j] <- (j-1)*mx/iter
+
+		    #mask with current threshold
+    # threshmask <- myarray
+    # threshmask[threshmask<thrs[j]]<-0
+    #     threshmask[threshmask>thrs[j]]<-1
+    # 
+    # con_vol <- 	myarray*threshmask
+    # con_vol <- myarray*myarray>thrs[j]
+    
+ 
+
+		  
+  #Retain voxels exceeding this threshold in a vector: vector lengths will differ for L and R
+  myL <- myarrayL
+  myR <- myarrayR
+	myL[myL<thrs[j]] <- NA #checked - this works - all values below threshold are now NA
+	myR[myR<thrs[j]] <- NA
+	
+	vecL <- as.vector(myL)
+	rmL <- c(which(is.na(vecL)),which(vecL==0))
+	vecL <- vecL[-rmL]
+	vecR <- as.vector(myR)
+	rmR <- c(which(is.na(vecR)),which(vecR==0))
+	vecR <- vecR[-rmR]
+	Nleft <- length(vecL)
+	Nright <- length(vecR)
+	voxl[j]<-Nleft
+	voxr[j]<-Nright
+	jn_all[j,] <- doboot(vecL,vecR,its)
+	}
+
+
+
+  sumLI$threshold[1:iter] <-thrs
+  sumLI$NvoxL[1:iter] <- voxl
+  sumLI$NvoxR[1:iter] <- voxr
+  sumLI$meanLIt[1:iter] <- rowMeans(jn_all)
+  
+  for (j in 1:iter){
+   sumLI$trimmeanLIt[j] <- mean(jn_all[j,],trim=.25)
+  }
+   
+  #Now do overall stats across all thresholds
+
+  # allsum df to hold overall data for each subject
+
+  maxrow <- max(which(!is.na(sumLI$meanLIt)))
+  allsum$ID[f] <- filelist[f]
+  allsum$mask[f] <- maskfile
+  allsum$exmask[f]<-exmaskfile
+   allsum$maxthr[f] <- sumLI$threshold[maxrow] #highest threshold with data
+   allsum$voxatmax[f] <- sumLI$NvoxL[maxrow]+sumLI$NvoxR[maxrow]
+   allsum$meanLI[f] <- mean(jn_all,na.rm=T)
+   allsum$p5_LImean[f] <- quantile(jn_all,.05,na.rm=T)
+   allsum$p95_LImean[f] <- quantile(jn_all,.95,na.rm=T)
+   
+   allsum$trimmeanLI[f] <- mean(jn_all,.25,na.rm=T)
+   #For the weighted mean make a new version of jn_all where the number of LIs is proportional to the threshold
+   
+   jnwt <- jn_all[1:maxrow,]
+   wts<-thrs[1:maxrow]/(sum(thrs[1:maxrow]))
+   Nwt <- round(wts*dim(jnwt)[1]*dim(jnwt)[2]/2,0) #we'll use all 10K of largest threshold and smaller Ns for lower thresholds
+   #initalise jnwt with lowest row, which is row 2 (as zero threshold omitted)
+   jnwt<-jn_all[2,1:Nwt[2]]
+   for (i in 2:maxrow){
+     jnwt <-c(jnwt,jn_all[i,1:Nwt[i]])
+   }
+   allsum$wtmean[f]<-mean(jnwt)
+   allsum$p5_wtmean[f]<-quantile(jnwt,.05)
+   allsum$p95_wtmean[f]<-quantile(jnwt,.95)
+   top <- min(21,which(sumLI$NvoxL<1),which(sumLI$NvoxR<1))-1 #first row with zero vox on one side - ignore these
+   allsum$wm[f] <- sum(sumLI$threshold[1:top]*sumLI$meanLIt[1:top],na.rm=T)/sum(sumLI$threshold[1:top])
+}  
+  #  par(mfrow=c(2,1))
+  # hist(jn_all,breaks=50)
+  # hist(jnwt,breaks=50)
+write.csv(allsum,here('Toolbox_R','allsumLI_wg_newmca.csv'),row.names=F)
+```
+
+
+```{r tempbit}
+#compare old and new mca
+
+allsumnew <- read.csv(here('Toolbox_R','allsumLI_wg_newmca.csv'))
+allsumold <- read.csv(here('Toolbox_R','allsumLI_wg_oldmca.csv'))
+
+plot(allsumnew$wtmean,allsumold$wtmean,main='WG_MCA_weightedMean')
+abline(a=0,b=1)
+abline(h=0,lty='dotted')
+abline(v=0,lty='dotted')
+
+plot(allsumnew$trimmeanLI,allsumold$trimmeanLI,main='WG_MCA_trimmedMean')
+abline(a=0,b=1)
+abline(h=0,lty='dotted')
+abline(v=0,lty='dotted')
+```
