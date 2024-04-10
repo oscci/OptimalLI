@@ -1,0 +1,324 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Image manipulation in R.
+
+This script creates composite figures from .png files created in MRIcroGL.
+First chunks do this for L and R images from averaged data from 3 groups; later chunks do similar for the L-R difference files used in mirror method.
+
+To run for main tasks, set do_pp to zero in line 27 and line 147
+To run for supplementary (PP tasks) set do_pp to 1.
+
+THIS SCRIPT REQUIRES colscale.png, vertline.png and colscale_yellowgreen.png to be saved in Images folder.
+
+```{r}
+require(magick)
+require(here)
+
+#myfolder <- here('_optimal_writeup','images','MRIcroGL_maps')
+
+myfolder <- '/Volumes/Extreme_Pro/_fmri_data/bruckert_raw/png_avgs_by_latgroup'
+
+
+
+```
+
+Read and crop all files.
+```{r cropfiles}
+do_pp <-0 #default analysis is 3 main tasks, with do_pp set to 0. Set to 1 to create maps for supplementary material
+tasks <- c('WG1','AN5','PP1')
+tasknames <- c('Word Generation','Auditory Naming','Semantic Matching')
+writefilename <-'bigbrains3gp.tiff'
+
+if (do_pp==1){
+tasks <- c('PP1','PP3','PP5')
+tasknames <- c('Semantic Match','Perceptual Match','Contrast')
+writefilename <-'bigbrainsPP3gp.tiff'
+}
+
+groups <- c('lefts','bilats','rights')
+sides <- c('L','R')
+i = 0
+j = 0
+images<-list()
+imsides<-list()
+addback<-c(3,4,9,10,15,16)
+for (t in 1:length(tasks)){
+  for (g in 1:length(groups)){
+    j <-j+1
+    for (s in 1:length(sides)){
+      i <- i+1
+      filename<-paste0(tasks[t],'_',groups[g],sides[s],'.png')
+      thisimage <- image_read(paste0(myfolder,'/',filename))
+      # if(i %in% addback){
+      # thisimage<-image_fill(thisimage, "lightcyan", point = "+100+200", fuzz = 20) #just replaces the colour at that point and other adj points
+      # }
+    
+      images[[i]]<-image_trim(thisimage)
+      images[[i]]<-image_scale(images[[i]],200)
+    }
+    
+  }
+}
+
+myfolder1 <- here('_optimal_writeup','images')
+ colscale <- image_read(paste0(myfolder1,'/colscale.png'))
+ colscale <-image_trim(colscale)
+ colscale <- image_scale(colscale,200)
+ vertline <- image_read(paste0(myfolder1,'/vertline.png'))
+
+```
+
+```{r assemble images}
+#Make a big canvas to place images
+
+mycanvas <- image_blank(width = 1250, height = 1000, color = "white")
+#first 6 are WG for 3 lat groups, L and R sides
+nuimage <- image_composite(mycanvas,images[[1]], offset = "+0+80")
+nuimage <- image_composite(nuimage,images[[2]], offset = "+200+80")
+nuimage <- image_composite(nuimage,images[[3]], offset = "+400+80")
+nuimage <- image_composite(nuimage,images[[4]], offset = "+600+80")
+nuimage <- image_composite(nuimage,images[[5]], offset = "+800+80")
+nuimage <- image_composite(nuimage,images[[6]], offset = "+1000+80")
+
+#next 6 are AN for 3 lat groups, L and R sides
+nuimage <- image_composite(nuimage,images[[7]], offset = "+0+270")
+nuimage <- image_composite(nuimage,images[[8]], offset = "+200+270")
+nuimage <- image_composite(nuimage,images[[9]], offset = "+400+270")
+nuimage <- image_composite(nuimage,images[[10]], offset = "+600+270")
+nuimage <- image_composite(nuimage,images[[11]], offset = "+800+270")
+nuimage <- image_composite(nuimage,images[[12]], offset = "+1000+270")
+
+#next 6 are PP1 for 3 lat groups, L and R sides
+nuimage <- image_composite(nuimage,images[[13]], offset = "+0+460")
+nuimage <- image_composite(nuimage,images[[14]], offset = "+200+460")
+nuimage <- image_composite(nuimage,images[[15]], offset = "+400+460")
+nuimage <- image_composite(nuimage,images[[16]], offset = "+600+460")
+nuimage <- image_composite(nuimage,images[[17]], offset = "+800+460")
+nuimage <- image_composite(nuimage,images[[18]], offset = "+1000+460")
+
+#add vertical lines
+nuimagex <- image_composite(nuimage,vertline,offset="+405,+1")
+nuimagex <- image_composite(nuimagex,vertline,offset="+805,+1")
+
+Lstring="N = 16*"
+Bstring ="N = 7*"
+if(do_pp==1){
+ Lstring="N = 16"
+ Bstring = "N = 6"
+}
+nuimage1<-image_annotate(nuimagex, "Left-lateralised", size=25,location="+170+5")
+nuimage1<-image_annotate(nuimage1, Lstring, size=18,location="+215+29")
+nuimage1<-image_annotate(nuimage1, "Bilateral", size=25,location="+560+5")
+nuimage1<-image_annotate(nuimage1, Bstring, size=18,location="+588+29")
+nuimage1<-image_annotate(nuimage1, "Right-lateralised", size=25,location="+950+5")
+nuimage1<-image_annotate(nuimage1, "N = 9", size=20,location="+1006+29")
+nuimage1<-image_annotate(nuimage1, tasknames[1], size=20,location="+15+40")
+nuimage1<-image_annotate(nuimage1, tasknames[2], size=20,location="+10+240")
+nuimage1<-image_annotate(nuimage1, tasknames[3], size=20,location="+10+430")
+nuimage1<-image_annotate(nuimage1, "Left hemisphere", size=20,location="+50+620")
+nuimage1<-image_annotate(nuimage1, "Left hemisphere", size=20,location="+450+620")
+nuimage1<-image_annotate(nuimage1, "Left hemisphere", size=20,location="+850+620")
+nuimage1<-image_annotate(nuimage1, "Right hemisphere", size=20,location="+250+620")
+nuimage1<-image_annotate(nuimage1, "Right hemisphere", size=20,location="+650+620")
+nuimage1<-image_annotate(nuimage1, "Right hemisphere", size=20,location="+1050+620")
+
+
+
+#add scale at bottom
+nuimage1<-image_composite(nuimage1,colscale, offset = "+1000+650")
+#nuimage1<-image_annotate(nuimage1, "Mean t-statistic:", size=18,location="+860+650")
+
+nuimage1 <-image_crop(nuimage1,"1250x700")
+
+writefolder <- here('_optimal_writeup','images')
+image_write(nuimage1,paste0(writefolder,'/',writefilename))
+```
+
+ Version for mirror figures
+
+
+Read and crop all files.
+We're using green and yellow version, as it is less confusing, given that the colour contrast now indicates lateralisation rather than activation
+```{r cropfilesmirror}
+myfolder <- '/Volumes/Extreme_Pro/_fmri_data/bruckert_raw/png_avgs_mirror_by_latgroup'
+
+tasks <- c('WG1','AN5','PP1')
+tasknames <- c('Word Generation','Auditory Naming','Semantic Matching')
+writefilename <-'mirrorbrains_3gp.tiff'
+
+if (do_pp==1){
+tasks <- c('PP1','PP3','PP5')
+tasknames <- c('Semantic Match','Perceptual Match','       Contrast')
+writefilename <-'mirrorbrainsPP_3gp.tiff'
+}
+
+
+groups <- c('lefts','bilats','rights')
+
+i = 0
+j = 0
+mimages<-list()
+
+for (t in 1:length(tasks)){
+  for (g in 1:length(groups)){
+    j <-j+1
+      filename<-paste0(tasks[t],'_',groups[g],'.png')
+      thisimage <- image_read(paste0(myfolder,'/',filename))
+      mimages[[j]]<-image_trim(thisimage)
+      mimages[[j]]<-image_scale(mimages[[j]],200)
+
+  }
+}
+
+myfolder1 <- here('_optimal_writeup','images')
+#colscale was created in powerpoint
+ colscalem <- image_read(paste0(myfolder1,'/colscale_yellowgreen.png'))
+ colscalem <-image_trim(colscalem)
+ colscalem <- image_scale(colscalem,230)
+
+
+```
+
+```{r assemblemirrorimages}
+#Make a big canvas to place images
+
+mycanvas <- image_blank(width = 800, height = 1000, color = "white")
+#first 3 are WG for left, bilat and right lateralised, L and R sides
+
+
+#offsets are distances for horiz and vertical
+nuimage <- image_composite(mycanvas,mimages[[1]], offset = "+0+80")
+nuimage <- image_composite(nuimage,mimages[[2]], offset = "+200+80")
+nuimage <- image_composite(nuimage,mimages[[3]], offset = "+400+80")
+
+#next 3 are AN for  left, bilat and right lateralised, L and R sides
+nuimage <- image_composite(nuimage,mimages[[4]], offset = "+0+270")
+nuimage <- image_composite(nuimage,mimages[[5]], offset = "+200+270")
+nuimage <- image_composite(nuimage,mimages[[6]], offset = "+400+270")
+
+#next 3 are PP1 for left, bilat and right lateralised, L and R sides
+nuimage <- image_composite(nuimage,mimages[[7]], offset = "+0+460")
+nuimage <- image_composite(nuimage,mimages[[8]], offset = "+200+460")
+nuimage <- image_composite(nuimage,mimages[[9]], offset = "+400+460")
+
+Lstring="N = 16*"
+Bstring ="N = 7*"
+if(do_pp==1){
+ Lstring="N = 16"
+ Bstring = "N = 6"
+}
+
+nuimage1<-image_annotate(nuimage, "Left-lateralised", size=25,location="+30+5")
+nuimage1<-image_annotate(nuimage1, Lstring, size=18,location="+80+29")
+nuimage1<-image_annotate(nuimage1, "Bilateral", size=25,location="+270+5")
+nuimage1<-image_annotate(nuimage1, Bstring, size=18,location="+286+29")
+nuimage1<-image_annotate(nuimage1, "Right-lateralised", size=25,location="+410+5")
+nuimage1<-image_annotate(nuimage1, "N = 9", size=18,location="+480+29")
+nuimage1<-image_annotate(nuimage1, tasknames[1], size=20,location="+250+50")
+nuimage1<-image_annotate(nuimage1, tasknames[2], size=20,location="+250+240")
+nuimage1<-image_annotate(nuimage1, tasknames[3], size=20,location="+250+430")
+
+
+#add scale at bottom
+nuimage1<-image_composite(nuimage1,colscalem, offset = "+360+620")
+#nuimage1<-image_annotate(nuimage1, "Mean t-statistic L-R difference:", size=18,location="+100+620")
+
+nuimage1 <-image_crop(nuimage1,"600x670")
+
+writefolder <- here('_optimal_writeup','images')
+image_write(nuimage1,paste0(writefolder,'/',writefilename))
+```
+
+Redo for powerpoint slides.  Each task separate; 3 subgroups in rows. Include both regular and mirror (now termed mimage)
+
+First make codes to keep track of which is which
+```{r makecodes}
+mynum <- 0
+dfcode <-data.frame(matrix(NA,nrow=18,ncol=4))
+for (t in tasks){
+  for (g in groups){
+    for (s in sides){
+      mynum<-mynum+1
+      dfcode[mynum,1]<-mynum
+      dfcode[mynum,2]<-t
+      dfcode[mynum,3]<-g
+      dfcode[mynum,4]<-s
+    }
+  }
+}
+
+mynum <- 0
+dfmcode <-data.frame(matrix(NA,nrow=9,ncol=3))
+for (t in tasks){
+  for (g in groups){
+      mynum<-mynum+1
+      dfmcode[mynum,1]<-mynum
+      dfmcode[mynum,2]<-t
+      dfmcode[mynum,3]<-g
+    
+  }
+}
+
+```
+
+```{r assemblemirrorimagesbytask}
+#Make a big canvas to place images
+for (t in 1:3){
+  writefilename <- paste0('brains_',tasks[t],'.png')
+mycanvas <- image_blank(width = 800, height = 1000, color = "white")
+
+basenum1 <- 6*(t-1)
+basenum2 <- 3*(t-1)
+
+#offsets are distances for horiz and vertical - start with L hem 3 gps
+nuimage <- image_composite(mycanvas,images[[(basenum1+1)]], offset = "+50+50")
+nuimage <- image_composite(nuimage,images[[(basenum1+3)]], offset = "+50+270")
+nuimage <- image_composite(nuimage,images[[(basenum1+5)]], offset = "+50+490")
+
+#next R hem 3 gps
+nuimage <- image_composite(nuimage,images[[(basenum1+2)]], offset = "+250+50")
+nuimage <- image_composite(nuimage,images[[(basenum1+4)]], offset = "+250+270")
+nuimage <- image_composite(nuimage,images[[(basenum1+6)]], offset = "+250+490")
+
+#next 3 are mirror diffs for 3 gps
+nuimage <- image_composite(nuimage,mimages[[(basenum2+1)]], offset = "+550+50")
+nuimage <- image_composite(nuimage,mimages[[(basenum2+2)]], offset = "+550+270")
+nuimage <- image_composite(nuimage,mimages[[(basenum2+3)]], offset = "+550+490")
+
+Lstring="N = 16*"
+Bstring ="N = 7*"
+if(do_pp==1){
+ Lstring="N = 16"
+ Bstring = "N = 6"
+}
+
+nuimage1<-image_annotate(nuimage, "Left-lateralised", size=25,location="+30+0")
+nuimage1<-image_annotate(nuimage1, Lstring, size=18,location="+30+25")
+nuimage1<-image_annotate(nuimage1, "Bilateral", size=25,location="+30+220")
+nuimage1<-image_annotate(nuimage1, Bstring, size=18,location="+30+245")
+nuimage1<-image_annotate(nuimage1, "Right-lateralised", size=25,location="+30+465")
+nuimage1<-image_annotate(nuimage1, "N = 9", size=18,location="+30+490")
+
+nuimage1<-image_annotate(nuimage1, "Left hem", size=20,location="+100+650")
+nuimage1<-image_annotate(nuimage1, "Right hem", size=20,location="+300+650")
+nuimage1<-image_annotate(nuimage1, "L-R", size=20,location="+650+650")
+
+
+#add scale at bottom
+nuimage1<-image_composite(nuimage1,colscale, offset = "+100+700")
+nuimage1<-image_composite(nuimage1,colscalem, offset = "+500+700")
+
+
+#nuimage1<-image_annotate(nuimage1, "Mean t-statistic L-R difference:", size=18,location="+100+620")
+
+nuimage1 <-image_crop(nuimage1,"800x750")
+
+writefolder <- here('_optimal_writeup','images')
+image_write(nuimage1,paste0(writefolder,'/',writefilename))
+}
+```
+
+

@@ -1,0 +1,113 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Image manipulation in R
+
+```{r}
+require(magick)
+require(here)
+
+
+myfolder <- '/Volumes/Extreme_Pro/_fmri_data/bruckert_raw/FEAT_results/mirror_map_avgs'
+
+
+```
+
+Read and crop all files.
+```{r cropfiles}
+do_pp <-0 #default analysis is 3 main tasks. Set to 1 to create maps for supplementary material
+tasks <- c('WG1','AN5','PP1')
+tasknames <- c('Word Generation','Auditory Naming','Semantic Match')
+writefilename <-'mirrorbrains.tiff'
+
+if (do_pp==1){
+tasks <- c('PP1','PP3','PP5')
+tasknames <- c('Semantic Match','Perceptual Match','       Contrast')
+writefilename <-'mirrorbrainsPP.tiff'
+}
+
+
+groups <- c('Typ','Atyp')
+
+i = 0
+j = 0
+images<-list()
+
+for (t in 1:length(tasks)){
+  for (g in 1:length(groups)){
+    j <-j+1
+      filename<-paste0('Mirror_image_',tasks[t],'_',groups[g],'.png')
+      thisimage <- image_read(paste0(myfolder,'/',filename))
+      images[[j]]<-image_trim(thisimage)
+      images[[j]]<-image_scale(images[[j]],200)
+
+  }
+}
+
+myfolder1 <- here('_optimal_writeup','images')
+ colscale <- image_read(paste0(myfolder1,'/colscale.png'))
+ colscale <-image_trim(colscale)
+ colscale <- image_scale(colscale,200)
+
+
+```
+
+```{r assemble images}
+#Make a big canvas to place images
+
+mycanvas <- image_blank(width = 800, height = 1000, color = "white")
+#first 2 are WG for typical and atypical, L and R
+
+#offsets are distances for horiz and vertical
+nuimage <- image_composite(mycanvas,images[[1]], offset = "+0+80")
+nuimage <- image_composite(nuimage,images[[2]], offset = "+200+80")
+
+
+#next 2 are AN for typical and atypical, L and R
+nuimage <- image_composite(nuimage,images[[3]], offset = "+0+270")
+nuimage <- image_composite(nuimage,images[[4]], offset = "+200+270")
+
+
+#next 2 are PP1 for typical and atypical, L and R
+nuimage <- image_composite(nuimage,images[[5]], offset = "+0+460")
+nuimage <- image_composite(nuimage,images[[6]], offset = "+200+460")
+
+
+
+nuimage1<-image_annotate(nuimage, "Typical", size=25,location="+70+5")
+nuimage1<-image_annotate(nuimage1, "Atypical", size=25,location="+260+5")
+nuimage1<-image_annotate(nuimage1, tasknames[1], size=20,location="+150+40")
+nuimage1<-image_annotate(nuimage1, tasknames[2], size=20,location="+150+240")
+nuimage1<-image_annotate(nuimage1, tasknames[3], size=20,location="+150+430")
+
+
+#add scale at bottom
+nuimage1<-image_composite(nuimage1,colscale, offset = "+130+600")
+
+nuimage1 <-image_crop(nuimage1,"400x650")
+
+writefolder <- here('_optimal_writeup','images')
+image_write(nuimage1,paste0(writefolder,'/',writefilename))
+```
+
+ 
+Can we also sharpen the pyramids and palm trees picture! Couldn't find a way to do that with magick, so sharpened in Preview and saved copy before adding text.
+
+```{r PPTfig}
+sharpenPPT <-0
+if (sharpenPPT == 1){
+myfile <- here('_optimal_writeup','images','PPT stimuli_orig.png')
+ thisimage <- image_read(myfile)
+  thisimage<-image_scale(thisimage,600)
+ #Make canvas with space on top for label
+ mycanvas <- image_blank(width = 600, height = 250, color = "white")
+ 
+ ppimage <- image_composite(mycanvas,thisimage, offset = "+0+40")
+ ppimage<-image_annotate(ppimage, "Semantic", size=20,location="+120+15")
+ ppimage<-image_annotate(ppimage, "Perceptual", size=20,location="+420+15")
+
+ image_write(ppimage,myfile)
+}
+```
